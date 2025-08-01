@@ -3,6 +3,9 @@ import { Image } from '@imagekit/react';
 const ImageKit = ({ src, alt, className, w, h }) => {
     const urlEndpoint = import.meta.env.VITE_IK_URL_ENDPOINT;
     
+    if (!src || src.trim() === "") {
+        return null;
+    }
     // If ImageKit is configured, use it
     if (urlEndpoint && !src.startsWith('http')) {
         return (
