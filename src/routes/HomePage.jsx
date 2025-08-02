@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
+import MainCategories from "../components/MainCategories";
 
 const Homepage = () => {
     return (
-        <div className="mt-4 flex flex-col gap-4">
+        <div className="flex flex-col gap-4 mt-4">
             {/* Breadcrumb */}
             <div className="flex gap-4">
                 <Link to="/">Home</Link>
@@ -13,7 +14,7 @@ const Homepage = () => {
             <div className="flex items-center justify-between">
                 {/* titles */}
                 <div className="">
-                    <h1 className="text-gray-800 text-2xl md:text-5xl lg:text-6xl font-bold">
+                    <h1 className="text-2xl font-bold text-gray-800 md:text-5xl lg:text-6xl">
                         Ideas That Inspire
                     </h1>
                     <p className="mt-8 text-md md:text-xl">
@@ -22,7 +23,7 @@ const Homepage = () => {
                 </div>
                 <div className="flex items-center gap-4"></div>
                 {/*animated button*/}
-                <Link to="write" className="hidden md:block relative">
+                <Link to="write" className="relative hidden md:block">
                     <svg
                         viewBox="0 0 200 200"
                         width="200"
@@ -45,7 +46,7 @@ const Homepage = () => {
                         </text>
                     </svg>
 
-                    <button className="absolute top-0 left-0 right-0 bottom-0 m-auto w-20 h-20 bg-blue-800 rounded-full flex items-center justify-center">
+                    <button className="absolute top-0 bottom-0 left-0 right-0 flex items-center justify-center w-20 h-20 m-auto bg-blue-800 rounded-full">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24"
@@ -61,6 +62,8 @@ const Homepage = () => {
                     </button>
                 </Link>
             </div>
+            {/* MainCategories */}
+            <MainCategories />
             {/* Features Posts */}
             {/* Post List */}
         </div>
