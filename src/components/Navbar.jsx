@@ -6,24 +6,24 @@ import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-reac
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="w-full h-16 md:h-20 flex items-center justify-between">
+    <div className="flex items-center justify-between w-full h-16 md:h-20">
       {/*LOGO*/}
       <Link to="/" className="flex items-center gap-4 text-2xl font-bold">
-        <img src="logo.png" alt="logo" className="w-8 h-8" />
-        {/* <ImageKit src="logo.png" alt="logo" w={32} h={32} /> */}
+        {/* <img src="logo.png" alt="logo" className="w-8 h-8" /> */}
+        <ImageKit src="logo.png" alt="logo" w={32} h={32} />
         <span>Blog</span>
       </Link>
       {/*Mobile Menu*/}
       <div className="md:hidden">
         {/*Mobile Button*/}
-        {/* <div className="cursor-pointer text-4xl -ml-12 relative z-50" onClick={() => setOpen((prev) => !prev)}>
+        <div className="relative z-50 -ml-12 text-4xl cursor-pointer" onClick={() => setOpen((prev) => !prev)}>
           {open ? <ImageKit src="close.png" alt="twitterx" w={32} h={32} /> : 
           <ImageKit src="icons8-menu-94.png" alt="menu" w={32} h={32} />}
-        </div> */}
-        <div className="cursor-pointer text-4xl -ml-12 relative z-50" onClick={() => setOpen((prev) => !prev)}>
+        </div>
+        {/* <div className="relative z-50 -ml-12 text-4xl cursor-pointer" onClick={() => setOpen((prev) => !prev)}>
           {open ? <img src="close.png" alt="twitterx" className="w-8 h-8" /> : 
           <img src="icons8-menu-94.png" alt="menu" className="w-8 h-8" />}
-        </div>
+        </div> */}
         {/*Mobile Link List*/}
         <div className={`w-full h-screen flex flex-col items-center justify-center gap-8 font-medium text-lg absolute top-16 transition-all ease-in out z-50 ${open ? "-right-0" : "-left-[100%]"}`}>
           <Link to="/">Home</Link>
@@ -31,19 +31,19 @@ const Navbar = () => {
           <Link to="/">Most Popular</Link>
           <Link to="/">About</Link>
           <Link to="/">
-            <button className="py-2 px-4 rounded-3xl bg-blue-800 text-white">Login 🔐</button>
+            <button className="px-4 py-2 text-white bg-blue-800 rounded-3xl">Login 🔐</button>
           </Link>
         </div>
       </div>
       {/*Desktop Menu*/}
-      <div className="hidden md:flex items-center gap-8 xl:gap-12 font-medium">
+      <div className="items-center hidden gap-8 font-medium md:flex xl:gap-12">
         <Link to="/">Home</Link>
         <Link to="/">Trending</Link>
         <Link to="/">Most Popular</Link>
         <Link to="/">About</Link>
         <SignedOut>
           <Link to="/login">
-            <button className="py-2 px-4 rounded-3xl bg-blue-800 text-white">Login 🔐</button>
+            <button className="px-4 py-2 text-white bg-blue-800 rounded-3xl">Login 🔐</button>
           </Link>
         </SignedOut>
         <SignedIn>

@@ -1,38 +1,59 @@
 import { Image } from '@imagekit/react';
 
-const ImageKit = ({ src, alt, className, w, h }) => {
-    const urlEndpoint = import.meta.env.VITE_IK_URL_ENDPOINT;
+// const ImageKit = ({ src, alt, className, w, h }) => {
+//     const urlEndpoint = import.meta.env.VITE_IK_URL_ENDPOINT;
     
-    if (!src || src.trim() === "") {
-        return null;
-    }
-    // If ImageKit is configured, use it
-    if (urlEndpoint && !src.startsWith('http')) {
-        return (
-            <Image 
-                urlEndpoint={urlEndpoint}
-                path={src} 
-                className={className}
-                loading="lazy"
-                lqip={{ active: true, quality: 20 }}
-                alt={alt}
-                width={w}
-                height={h}
-            />
-        );
-    }
+//     if (!src || src.trim() === "") {
+//         return null;
+//     }
+//     // If ImageKit is configured, use it
+//     if (urlEndpoint && !src.startsWith('http')) {
+//         return (
+//             <Image 
+//                 urlEndpoint={urlEndpoint}
+//                 path={src} 
+//                 className={className}
+//                 loading="lazy"
+//                 lqip={{ active: true, quality: 20 }}
+//                 alt={alt}
+//                 width={w}
+//                 height={h}
+//             />
+//         );
+//     }
     
-    // Fallback to regular img tag
-    return (
-        <img 
-            src={src.startsWith('http') ? src : `/${src}`}
-            alt={alt}
-            className={className}
-            width={w}
-            height={h}
-            loading="lazy"
-        />
-    );
-}
+//     // Fallback to regular img tag
+//     return (
+//         <img 
+//             src={src.startsWith('http') ? src : `/${src}`}
+//             alt={alt}
+//             className={className}
+//             width={w}
+//             height={h}
+//             loading="lazy"
+//         />
+//     );
+// }
+
+const ImageKit = ({ src, className, w, h, alt }) => {
+  return (
+    <Image
+      urlEndpoint={import.meta.env.VITE_IK_URL_ENDPOINT}
+      src={src}
+      className={className}
+      loading="lazy"
+      lqip={{ active: true, quality: 20 }}
+      alt={alt}
+      width={w}
+      height={h}
+      transformation={[
+        {
+          width: w,
+          height: h,
+        },
+      ]}
+    />
+  );
+};
 
 export default ImageKit;
