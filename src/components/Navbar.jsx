@@ -25,7 +25,7 @@ const Navbar = () => {
           <img src="icons8-menu-94.png" alt="menu" className="w-8 h-8" />}
         </div> */}
         {/*Mobile Link List*/}
-        <div className={`w-full h-screen flex flex-col items-center justify-center gap-8 font-medium text-lg absolute top-16 transition-all ease-in out z-50 ${open ? "-right-0" : "-left-[100%]"}`}>
+        <div className={`w-full h-screen bg-[#e6e6ff] flex flex-col items-center justify-center gap-8 font-medium text-lg absolute top-16 transition-all ease-in out z-50 ${open ? "-right-0" : "-left-[100%]"}`}>
           <Link to="/">Home</Link>
           <Link to="/">Trending</Link>
           <Link to="/">Most Popular</Link>
