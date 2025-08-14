@@ -5,8 +5,10 @@ import commentRouter from './routes/comment.route.js';
 import webhookRouter from './routes/webhook.route.js';
 import connectDB from './lib/connectDB.js'; // Assuming you have a db.js file for MongoDB connection
 import { clerkMiddleware, requireAuth } from "@clerk/express";
+import cors from 'cors';
 
 const app = express();
+app.use(cors(process.env.CLIENT_URL));
 app.use(clerkMiddleware()); // Middleware to handle Clerk authentication
 app.use("/webhooks", webhookRouter);
 app.use(express.json());
