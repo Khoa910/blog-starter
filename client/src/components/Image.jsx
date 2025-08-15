@@ -1,45 +1,10 @@
-import { Image } from '@imagekit/react';
+import { IKImage } from "imagekitio-react";
 
-// const ImageKit = ({ src, alt, className, w, h }) => {
-//     const urlEndpoint = import.meta.env.VITE_IK_URL_ENDPOINT;
-    
-//     if (!src || src.trim() === "") {
-//         return null;
-//     }
-//     // If ImageKit is configured, use it
-//     if (urlEndpoint && !src.startsWith('http')) {
-//         return (
-//             <Image 
-//                 urlEndpoint={urlEndpoint}
-//                 path={src} 
-//                 className={className}
-//                 loading="lazy"
-//                 lqip={{ active: true, quality: 20 }}
-//                 alt={alt}
-//                 width={w}
-//                 height={h}
-//             />
-//         );
-//     }
-    
-//     // Fallback to regular img tag
-//     return (
-//         <img 
-//             src={src.startsWith('http') ? src : `/${src}`}
-//             alt={alt}
-//             className={className}
-//             width={w}
-//             height={h}
-//             loading="lazy"
-//         />
-//     );
-// }
-
-const ImageKit = ({ src, className, w, h, alt }) => {
+const Image = ({ src, className, w, h, alt }) => {
   return (
-    <Image
+    <IKImage
       urlEndpoint={import.meta.env.VITE_IK_URL_ENDPOINT}
-      src={src}
+      path={src}
       className={className}
       loading="lazy"
       lqip={{ active: true, quality: 20 }}
@@ -56,4 +21,4 @@ const ImageKit = ({ src, className, w, h, alt }) => {
   );
 };
 
-export default ImageKit;
+export default Image;

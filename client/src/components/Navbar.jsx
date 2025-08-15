@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ImageKit from "./Image";
+import Image from "./Image";
 import { Link } from "react-router-dom";
 import { useAuth, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import { useEffect } from "react";
@@ -18,15 +18,15 @@ const Navbar = () => {
       {/*LOGO*/}
       <Link to="/" className="flex items-center gap-4 text-2xl font-bold">
         {/* <img src="logo.png" alt="logo" className="w-8 h-8" /> */}
-        <ImageKit src="logo.png" alt="logo" w={32} h={32} />
+        <Image src="logo.png" alt="logo" w={32} h={32} />
         <span>Blog</span>
       </Link>
       {/*Mobile Menu*/}
       <div className="md:hidden">
         {/*Mobile Button*/}
         <div className="relative z-50 -ml-12 text-4xl cursor-pointer" onClick={() => setOpen((prev) => !prev)}>
-          {open ? <ImageKit src="close.png" alt="twitterx" w={32} h={32} /> : 
-          <ImageKit src="icons8-menu-94.png" alt="menu" w={32} h={32} />}
+          {open ? <Image src="close.png" alt="twitterx" w={32} h={32} /> : 
+          <Image src="icons8-menu-94.png" alt="menu" w={32} h={32} />}
         </div>
         {/* <div className="relative z-50 -ml-12 text-4xl cursor-pointer" onClick={() => setOpen((prev) => !prev)}>
           {open ? <img src="close.png" alt="twitterx" className="w-8 h-8" /> : 
