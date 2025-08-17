@@ -27,7 +27,9 @@ const authenticator = async () => {
 
 const Write = () => {
     const { isLoaded, isSignIn } = useUser(); //React hook của clerk
-    const [value, setValue] = useState('');
+    const [value, setValue] = useState("");
+    const [cover, setCover] = useState("");
+    const [progress, setProgress] = useState(0);
     const navigate = useNavigate();
 
     const { getToken } = useAuth();
@@ -74,8 +76,13 @@ const Write = () => {
     };
     const onSuccess = (res) => {
         console.log(res);
-        setData(res);
+        setCover(res);
     }; 
+
+    const onUploadProgress = (progress) => {
+        console.log(progress);
+        setProgress(Math.round((progress.loaded / progress.total) * 100));
+    };
 
     return (
         <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] flex flex-col gap-6">
@@ -88,9 +95,10 @@ const Write = () => {
                     authenticator={authenticator}
                 >
                     <IKUpload 
-                        useUniqueFileName
+                        useUniqueFileName //each file will generate a new name
                         onError={onError}
-                        onSuccess={onSuccess}/>
+                        onSuccess={onSuccess}
+                        onUploadProgress={onUploadProgress}/>
                 </IKContext>
                 <input className="text-4xl font-semibold bg-transparent outline-none" type="text" placeholder="My Awesome Story" name="title" />
                 <div className="flex items-center gap-4">
