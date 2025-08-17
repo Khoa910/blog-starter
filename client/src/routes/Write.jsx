@@ -2,35 +2,28 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import 'react-quill-new/dist/quill.snow.css';
 import ReactQuill from "react-quill-new";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { IKContext, IKUpload } from "imagekitio-react";
-
-const authenticator = async () => {
-        try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/posts/upload-auth`);
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Request failed with status ${response.status}: ${errorText}`);
-            }
-
-            const data = await response.json();
-            const { signature, expire, token, publicKey } = data;
-            return { signature, expire, token, publicKey };
-        } catch (error) {
-            console.error("Authentication error:", error);
-            throw new Error("Authentication request failed");
-        }
-    };
+import Upload from "../components/Upload";
 
 const Write = () => {
     const { isLoaded, isSignIn } = useUser(); //React hook của clerk
     const [value, setValue] = useState("");
     const [cover, setCover] = useState("");
+    const [img, setImg] = useState("");
+    const [video, setVideo] = useState("");
     const [progress, setProgress] = useState(0);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        img && setValue((prev) => prev + `<p><image src="${img.url}"/></p>`);
+    }, [img]);
+
+    useEffect(() => {
+        video && setValue((prev) => prev + `<p><iframe class="ql-video" src="${video.url}"/></p>`);
+    }, [video]);
 
     const { getToken } = useAuth();
     const mutation = useMutation({
@@ -60,6 +53,7 @@ const Write = () => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = {
+            img: cover.filePath || "",
             title: formData.get("title"),
             category: formData.get("category"),
             desc: formData.get("desc"),
@@ -70,36 +64,16 @@ const Write = () => {
         mutation.mutate(data)
     }
     
-    const onError = (err) => {
-        console.log(err);
-        toast.error("Image upload failed!");
-    };
-    const onSuccess = (res) => {
-        console.log(res);
-        setCover(res);
-    }; 
-
-    const onUploadProgress = (progress) => {
-        console.log(progress);
-        setProgress(Math.round((progress.loaded / progress.total) * 100));
-    };
+    
 
     return (
         <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] flex flex-col gap-6">
             <h1 className="font-light text-cl">Create a New Post</h1>
             <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-6 mb-6">
-                {/* <button className="p-2 text-sm text-gray-500 bg-white shadow-sm w-max rounded-xl">Add a cover image</button> */}
-                <IKContext 
-                    publicKey={import.meta.env.VITE_IK_PUBLIC_KEY}
-                    urlEndpoint={import.meta.env.VITE_IK_URL_ENDPOINT}
-                    authenticator={authenticator}
-                >
-                    <IKUpload 
-                        useUniqueFileName //each file will generate a new name
-                        onError={onError}
-                        onSuccess={onSuccess}
-                        onUploadProgress={onUploadProgress}/>
-                </IKContext>
+                <Upload type="image" setProgress={setProgress} setData={setCover}>
+                    <button className="p-2 text-sm text-gray-500 bg-white shadow-sm w-max rounded-xl">Add a cover image</button>
+                </Upload>
+                
                 <input className="text-4xl font-semibold bg-transparent outline-none" type="text" placeholder="My Awesome Story" name="title" />
                 <div className="flex items-center gap-4">
                     <label htmlFor="" className="text-sm">Choose a category:</label>
@@ -115,14 +89,20 @@ const Write = () => {
                 <textarea className="p-4 bg-white shadow-md rounded-xl" name="desc" placeholder="A short description" />
                 <div className="flex flex-1">
                     <div className="flex flex-col gap-2 mr-2">
-                        <div className="">🖼</div>
-                        <div className="">▶</div>
+                        <Upload type="image" setProgress={setProgress} setData={setImg}>🌆</Upload>
+                        <Upload type="video" setProgress={setProgress} setData={setVideo}>▶️</Upload>
                     </div>
-                    <ReactQuill theme="snow" className="flex-1 bg-white shadow-md rounded-xl" value={value} onChange={setValue}/>
+                    <ReactQuill 
+                        theme="snow" 
+                        className="flex-1 bg-white shadow-md rounded-xl" 
+                        value={value} onChange={setValue} 
+                        readOnly={0 < progress && progress < 100}/>
                 </div>
-                <button disabled={mutation.isPending} className="p-2 mt-4 font-medium text-white bg-blue-800 rounded-xl w-36 disabled:bg-blue-400 disabled:cursor-not-allowed">
+                <button disabled={mutation.isPending || (0 < progress && progress < 100)} 
+                className="p-2 mt-4 font-medium text-white bg-blue-800 rounded-xl w-36 disabled:bg-blue-400 disabled:cursor-not-allowed">
                     {mutation.isPending ? "Loading..." : "Post"}
                 </button>
+                {"Progress" + progress}
                 {mutation.isError && <span>{mutation.error.message}</span>}
             </form>
         </div>

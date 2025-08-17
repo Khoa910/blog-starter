@@ -1,32 +1,51 @@
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import ImageKit from '../components/Image';
 import PostMenuActions from '../components/PostMenuActions';
 import Search from '../components/Search';
 import Comments from '../components/Comments';
+import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "timeago.js";
+
+const fetchPost = async (slug) => {
+  const res = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${slug}`);
+  return res.data;
+};
 
 const SinglePostPage = () => {
+    const { slug } = useParams();
+
+    const { isPending, error, data } = useQuery({
+        queryKey: ["post", slug],
+        queryFn: () => fetchPost(slug),
+    });
+
+    if (isPending) return "loading...";
+    if (error) return "Something went wrong!" + error.message;
+    if (!data) return "Post not found!";
+    
     return (
         <div className="flex flex-col gap-8">
             {/* detail */}
             <div className="flex gap-8">
                 <div className="flex flex-col gap-8 lg:w-3/5">
                     <h1 className="text-xl font-semibold md:text-3xl xl:text-4xl 2xl:text-5xl">
-                        A whole new world god only knows
+                        {data.title}
                     </h1>
                     <div className="flex items-center gap-2 text-sm text-gray-400">
                         <span>Written by</span>
-                        <Link className="text-blue-800">John Doe</Link>
+                        <Link className="text-blue-800">{data.user.username}</Link>
                         <span>on</span>
-                        <Link className="text-blue-800">Web Design</Link>
-                        <span>2 days ago</span>
+                        <Link className="text-blue-800">{data.category}</Link>
+                        <span>{format(data.createdAt)}</span>
                     </div>
                     <p className="font-medium text-gray-500">
-                        
+                        {data.desc}
                     </p>
                 </div>
-                <div className="hidden w-2/5 lg:block">
-                    <ImageKit src="postImg.jpeg" w="600" className="rounded-2xl"/>
-                </div> 
+                {data.img && <div className="hidden w-2/5 lg:block">
+                    <ImageKit src={data.img} w="600" className="rounded-2xl"/>
+                </div>}
             </div>
             {/* content */}
             <div className="flex flex-col justify-between gap-12 md:flex-row">
@@ -122,10 +141,10 @@ const SinglePostPage = () => {
                     <h1 className="mb-4 text-sm font-medium">Author</h1>
                     <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-8">
-                        <ImageKit src="userImg.jpeg" className="object-cover w-12 h-12 rounded-full" w="48" h="48"/>
-                        <Link className="text-blue-800">John Doe</Link>
+                        {data.user.img && <ImageKit src={data.user.img} className="object-cover w-12 h-12 rounded-full" w="48" h="48"/>}
+                        <Link className="text-blue-800">{data.user.username}</Link>
                     </div>
-                        <p className="text-sm text-gray-500">dfsdfsdfsf</p>
+                        <p className="text-sm text-gray-500">sdf</p>
                         <div className="flex gap-2">
                             <Link>
                                 <ImageKit src="facebook.svg" />
@@ -150,7 +169,7 @@ const SinglePostPage = () => {
                     <Search/>
                 </div>
             </div>
-            <Comments/>
+            <Comments postId={data._id} />
         </div>
     );
 };
