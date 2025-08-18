@@ -33,7 +33,7 @@ const PostList = () => {
     // if (status === "error") return "Something went wrong!";
     if (error) return "Something went wrong!";
 
-    console.log(data)
+    //console.log(data)
 
     //combine all posts in each of page into 1 big array
     const allPosts = data?.pages?.flatMap(page => page.posts) || [];

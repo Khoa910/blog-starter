@@ -6,7 +6,7 @@ const userSchema = new Schema({
         username: { type: String, required: true, unique: true },
         email: { type: String, required: true, unique: true },
         img: { type: String },
-        savePosts: { type: [String], default: [] },
+        savedPosts: { type: [String], default: [] },
     },
     {timestamps: true} // Automatically manage createdAt and updatedAt fields
 );

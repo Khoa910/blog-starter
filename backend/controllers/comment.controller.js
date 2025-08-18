@@ -27,8 +27,10 @@ export const addComment = async (req, res) => {
     });
 
     const savedComment = await newComment.save();
+    setTimeout(() => {
+        res.status(201).json(savedComment);
+    }, 3000);
 
-    res.status(201).json(savedComment);
 };
 
 // export const addComment = async (req, res) => {
@@ -71,6 +73,13 @@ export const deleteComment = async (req, res) => {
 
     if(!clerkUserId){
         return res.status(401).json("not authenticated");
+    }
+
+    const role = req.auth.sessionClaims?.metadata?.role || "user";
+
+    if (role === "admin") {
+        await Comment.findByIdAndDelete(req.params.id);
+        return res.status(200).json("Comment has been deleted");
     }
 
     const user = await User.findOne({clerkUserId});

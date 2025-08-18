@@ -21,16 +21,21 @@ export const clerkWebHook = async (req, res) => {
         res.status(400).json({ message: "Webhook verification failed!" });
         }
 
-    // console.log(evt.data)
+    //console.log(evt.data);
 
     if (evt.type === "user.created") {
-        const newUser = new User({
-            clerkUserId: evt.data.id,
-            username: evt.data.username || evt.data.email_addresses[0].email_address,
-            email: evt.data.email_addresses[0].email_address,
-            img: evt.data.profile_image_url,
-        });
-        await newUser.save();
+        try {
+            const newUser = new User({
+                clerkUserId: evt.data.id,
+                username: evt.data.username || evt.data.email_addresses[0].email_address,
+                email: evt.data.email_addresses[0].email_address,
+                img: evt.data.profile_image_url,
+            });
+            await newUser.save();
+            console.log("✅ User saved:", newUser);
+        } catch (err) {
+            console.error("❌ Error saving user:", err.message);
+        }
     }
 
     if (evt.type === "user.updated") {
