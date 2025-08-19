@@ -7,8 +7,66 @@ export const getPosts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 2;
 
-    const posts = await Post.find()
+    //Create an empty query object → will be used to pass into MongoDB find()
+    const query = {};
+    //console.log(req.query);
+
+    const cat = req.query.cat;
+    const author = req.query.author;
+    const searchQuery = req.query.search;
+    const sortQuery = req.query.sort;
+    const featured = req.query.featured;
+
+    //If there is a cat param, add the category = cat condition to the query
+    if (cat) {
+        query.category = cat;
+    }
+
+    //If there is a search, find the title containing the string searchQuery (case-insensitive thanks to $options: "i")
+    if (searchQuery) {
+        query.title = { $regex: searchQuery, $options: "i" };
+    }
+
+    //Find the author. If found, only get posts from that user
+    if (author) {
+        const user = await User.findOne({ username: author }).select("_id");
+        if (!user) {
+            return res.status(404).json("No post found!");
+        }
+        query.user = user._id;
+    }
+
+    //Default sort by latest created date
+    let sortObj = { createdAt: -1 };
+
+    if (sortQuery) {
+        switch (sortQuery) {
+        case "newest":
+            sortObj = { createdAt: -1 };
+            break;
+        case "oldest":
+            sortObj = { createdAt: 1 };
+            break;
+        case "popular":
+            sortObj = { visit: -1 };
+            break;
+        case "trending":
+            sortObj = { visit: -1 };
+            query.createdAt = { $gte: new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000) };
+            break;
+        default:
+            break;
+        }
+    }
+
+    //If there is a featured, only take the featured article.
+    if (featured) {
+        query.isFeatured = true;
+    }
+
+    const posts = await Post.find(query)
         .populate("user", "username")
+        .sort(sortObj)
         .limit(limit)
         .skip((page - 1) * limit);
     const totalPosts = await Post.countDocuments();

@@ -1,21 +1,41 @@
 import ImageKit from "./Image";
 import { Link } from "react-router-dom";
 
+const fetchPost = async () => {
+    const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/posts?featured=true&limit=4&sort=newest`
+    );
+    return res.data;
+    };
+
 const FeaturedPosts = () => {
+    const { isPending, error, data } = useQuery({
+        queryKey: ["featuredPosts"],
+        queryFn: () => fetchPost(),
+    });
+
+    if (isPending) return "loading...";
+    if (error) return "Something went wrong!" + error.message;
+
+    const posts = data.posts;
+    if (!posts || posts.length === 0) {
+        return;
+    }
+
     return (
         <div className="flex flex-col gap-8 mt-8 lg:flex-row">
             {/* First */}
             <div className="flex flex-col w-full gap-4 lg:w1/2">
             {/* image */}
-            <ImageKit src="featured1.jpeg" className="object-cover rounded-3xl" />
+            {posts[0].img && <ImageKit src={posts[0].img} className="object-cover rounded-3xl" />}
             {/* detail */}
             <div className="flex items-center gap-4">
                 <h1 className="font-semibold lg:text-lg">01.</h1>
-                <Link className="text-blue-800 lg:text-lg">Web Design</Link>
-                <span className="text-gray-500">2 days ago</span>
+                <Link className="text-blue-800 lg:text-lg">{posts[0].category}</Link>
+                <span className="text-gray-500">{format(posts[0].createdAt)}</span>
             </div>
             {/* title */}
-            <Link to="/test" className="text-xl font-semibold lg:text-3xl lg:font-bold">Hi there</Link>
+            <Link to={posts[0].slug} className="text-xl font-semibold lg:text-3xl lg:font-bold">{posts[0].title}</Link>
             </div>
             {/* Others */}
             <div className="flex flex-col w-full gap-4 lg:w1/2">

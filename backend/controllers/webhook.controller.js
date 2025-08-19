@@ -32,9 +32,9 @@ export const clerkWebHook = async (req, res) => {
                 img: evt.data.profile_image_url,
             });
             await newUser.save();
-            console.log("✅ User saved:", newUser);
+            console.log("User saved:", newUser);
         } catch (err) {
-            console.error("❌ Error saving user:", err.message);
+            console.error("Error saving user:", err.message);
         }
     }
 
