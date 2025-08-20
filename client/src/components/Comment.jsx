@@ -4,6 +4,8 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useState } from "react";
+import { FaRegThumbsUp, FaThumbsUp } from "react-icons/fa";
 
 const Comment = ({ comment, postId }) => {
     const { user } = useUser();
@@ -34,6 +36,42 @@ const Comment = ({ comment, postId }) => {
         },
     });
 
+    const [liked, setLiked] = useState(false);
+    const [replying, setReplying] = useState(false);
+    const [replyText, setReplyText] = useState("");
+
+    // Xử lý Like
+    const handleLike = () => {
+        setLiked(!liked);
+        // Nếu muốn gọi API like thì viết ở đây
+        // axios.post(`${API}/comments/${comment._id}/like`, { userId: user.id })
+    };
+
+    // Xử lý Reply
+    const handleReply = async () => {
+        if (!replyText.trim()) return;
+
+        try {
+            const token = await getToken();
+            await axios.post(
+                `${import.meta.env.VITE_API_URL}/comments/${comment._id}/reply`,
+                { text: replyText },
+                {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                }
+            );
+
+            toast.success("Reply added");
+            setReplyText("");
+            setReplying(false);
+            queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+        } catch (err) {
+            toast.error("Failed to add reply");
+        }
+    };
+
     return(
         <div className="p-4 bg-slate-50 rounded-xl">
             <div className="flex items-center gap-4">
@@ -59,6 +97,44 @@ const Comment = ({ comment, postId }) => {
             <div className="mt-4">
                 <p>{comment.desc}</p>
             </div>
+
+            {/* Like + Reply actions */}
+            <div className="flex items-center gap-6 mt-2 text-sm text-gray-600">
+                <button
+                onClick={handleLike}
+                className={`flex items-center gap-1 hover:text-blue-500 ${
+                    liked ? "text-blue-600 font-medium" : ""
+                }`}
+                >
+                {liked ? <FaThumbsUp /> : <FaRegThumbsUp />}
+                Like
+                </button>
+
+                <button
+                onClick={() => setReplying(!replying)}
+                className="hover:text-blue-500"
+                >
+                Reply
+                </button>
+            </div>
+
+            {/* Reply box */}
+            {replying && (
+                <div className="flex items-center gap-2 mt-2">
+                <input
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Write a reply..."
+                    className="flex-1 px-3 py-1 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <button
+                    onClick={handleReply}
+                    className="px-3 py-1 text-sm text-white bg-blue-500 rounded-lg hover:bg-blue-600"
+                >
+                    Send
+                </button>
+                </div>
+            )}
         </div>
     )
 }

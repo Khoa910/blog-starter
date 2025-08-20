@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
-import ImageKit from '../components/Image';
+import ImageKit from '../components/PostImage';
+import Image from '../components/Image';
 import PostMenuActions from '../components/PostMenuActions';
 import Search from '../components/Search';
 import Comments from '../components/Comments';
@@ -24,6 +25,25 @@ const SinglePostPage = () => {
     if (error) return "Something went wrong!" + error.message;
     if (!data) return "Post not found!";
     
+    const parseContent = (html) => {
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+
+        const result = [];
+        temp.childNodes.forEach((node, idx) => {
+            if (node.nodeName === "P") {
+                if (node.innerText.trim()) {
+                    result.push(<p key={idx}>{node.innerText}</p>);
+                }
+                const img = node.querySelector("img");
+                if (img) {
+                    result.push(<img key={`${idx}-img`} src={img.src} alt="" className="w-full max-w-[600px] h-auto max-h-[800px] object-cover rounded-xl mx-auto my-3 shadow-md"/>);
+                }
+            }
+        });
+        return result;
+    };
+
     return (
         <div className="flex flex-col gap-8">
             {/* detail */}
@@ -51,106 +71,23 @@ const SinglePostPage = () => {
             <div className="flex flex-col justify-between gap-12 md:flex-row">
                 {/* text */}
                 <div className="flex flex-col gap-6 text-justify lg:text-lg">
-                <p>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias neque
-                    fugiat itaque quas esse sunt cupiditate possimus cumque asperiores,
-                    dolorem, dolores eligendi amet perferendis illum repellat nam quam
-                    facilis veritatis. Lorem ipsum dolor sit amet consectetur
-                    adipisicing elit. Sint ipsa fuga nihil numquam, quam dicta quas
-                    exercitationem aliquam maxime quaerat, enim autem culpa sequi at!
-                    Earum facere in ducimus culpa. Lorem ipsum dolor sit amet
-                    consectetur, adipisicing elit. Libero fuga modi amet error aliquid
-                    eos nobis vero soluta facilis, voluptatem, voluptates quod suscipit
-                    obcaecati voluptate quaerat laborum, voluptatum dicta ipsum.
-                </p>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias neque
-                    fugiat itaque quas esse sunt cupiditate possimus cumque asperiores,
-                    dolorem, dolores eligendi amet perferendis illum repellat nam quam
-                    facilis veritatis. Lorem ipsum dolor sit amet consectetur
-                    adipisicing elit. Sint ipsa fuga nihil numquam, quam dicta quas
-                    exercitationem aliquam maxime quaerat, enim autem culpa sequi at!
-                    Earum facere in ducimus culpa. Lorem ipsum dolor sit amet
-                    consectetur, adipisicing elit. Libero fuga modi amet error aliquid
-                    eos nobis vero soluta facilis, voluptatem, voluptates quod suscipit
-                    obcaecati voluptate quaerat laborum, voluptatum dicta ipsum.
-                </p>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias neque
-                    fugiat itaque quas esse sunt cupiditate possimus cumque asperiores,
-                    dolorem, dolores eligendi amet perferendis illum repellat nam quam
-                    facilis veritatis. Lorem ipsum dolor sit amet consectetur
-                    adipisicing elit. Sint ipsa fuga nihil numquam, quam dicta quas
-                    exercitationem aliquam maxime quaerat, enim autem culpa sequi at!
-                    Earum facere in ducimus culpa. Lorem ipsum dolor sit amet
-                    consectetur, adipisicing elit. Libero fuga modi amet error aliquid
-                    eos nobis vero soluta facilis, voluptatem, voluptates quod suscipit
-                    obcaecati voluptate quaerat laborum, voluptatum dicta ipsum.
-                </p>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias neque
-                    fugiat itaque quas esse sunt cupiditate possimus cumque asperiores,
-                    dolorem, dolores eligendi amet perferendis illum repellat nam quam
-                    facilis veritatis. Lorem ipsum dolor sit amet consectetur
-                    adipisicing elit. Sint ipsa fuga nihil numquam, quam dicta quas
-                    exercitationem aliquam maxime quaerat, enim autem culpa sequi at!
-                    Earum facere in ducimus culpa. Lorem ipsum dolor sit amet
-                    consectetur, adipisicing elit. Libero fuga modi amet error aliquid
-                    eos nobis vero soluta facilis, voluptatem, voluptates quod suscipit
-                    obcaecati voluptate quaerat laborum, voluptatum dicta ipsum.
-                </p>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias neque
-                    fugiat itaque quas esse sunt cupiditate possimus cumque asperiores,
-                    dolorem, dolores eligendi amet perferendis illum repellat nam quam
-                    facilis veritatis. Lorem ipsum dolor sit amet consectetur
-                    adipisicing elit. Sint ipsa fuga nihil numquam, quam dicta quas
-                    exercitationem aliquam maxime quaerat, enim autem culpa sequi at!
-                    Earum facere in ducimus culpa. Lorem ipsum dolor sit amet
-                    consectetur, adipisicing elit. Libero fuga modi amet error aliquid
-                    eos nobis vero soluta facilis, voluptatem, voluptates quod suscipit
-                    obcaecati voluptate quaerat laborum, voluptatum dicta ipsum.
-                </p>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias neque
-                    fugiat itaque quas esse sunt cupiditate possimus cumque asperiores,
-                    dolorem, dolores eligendi amet perferendis illum repellat nam quam
-                    facilis veritatis. Lorem ipsum dolor sit amet consectetur
-                    adipisicing elit. Sint ipsa fuga nihil numquam, quam dicta quas
-                    exercitationem aliquam maxime quaerat, enim autem culpa sequi at!
-                    Earum facere in ducimus culpa. Lorem ipsum dolor sit amet
-                    consectetur, adipisicing elit. Libero fuga modi amet error aliquid
-                    eos nobis vero soluta facilis, voluptatem, voluptates quod suscipit
-                    obcaecati voluptate quaerat laborum, voluptatum dicta ipsum.
-                </p>
-                <p>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias neque
-                    fugiat itaque quas esse sunt cupiditate possimus cumque asperiores,
-                    dolorem, dolores eligendi amet perferendis illum repellat nam quam
-                    facilis veritatis. Lorem ipsum dolor sit amet consectetur
-                    adipisicing elit. Sint ipsa fuga nihil numquam, quam dicta quas
-                    exercitationem aliquam maxime quaerat, enim autem culpa sequi at!
-                    Earum facere in ducimus culpa. Lorem ipsum dolor sit amet
-                    consectetur, adipisicing elit. Libero fuga modi amet error aliquid
-                    eos nobis vero soluta facilis, voluptatem, voluptates quod suscipit
-                    obcaecati voluptate quaerat laborum, voluptatum dicta ipsum.
-                </p>
+                    {parseContent(data.content)}
                 </div>
                 {/* menu */}
                 <div className="sticky px-4 h-max top-8">
                     <h1 className="mb-4 text-sm font-medium">Author</h1>
                     <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-8">
-                        {data.user.img && <ImageKit src={data.user.img} className="object-cover w-12 h-12 rounded-full" w="48" h="48"/>}
+                        {data.user.img && <Image src={data.user.img} className="object-cover w-12 h-12 rounded-full" w="48" h="48"/>}
                         <Link className="text-blue-800">{data.user.username}</Link>
                     </div>
                         <p className="text-sm text-gray-500">sdf</p>
                         <div className="flex gap-2">
                             <Link>
-                                <ImageKit src="facebook.svg" />
+                                <Image src="facebook.svg" />
                             </Link>
                             <Link>
-                                <ImageKit src="instagram.svg" />
+                                <Image src="instagram.svg" />
                             </Link>
                         </div>
                     </div>
