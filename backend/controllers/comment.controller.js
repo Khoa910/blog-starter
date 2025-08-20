@@ -33,6 +33,40 @@ export const addComment = async (req, res) => {
 
 };
 
+export const replyToComment = async (req, res) => {
+    const clerkUserId = req.auth().userId;
+    const parentCommentId = req.params.commentId;
+
+    if (!clerkUserId) {
+        return res.status(401).json("Not authenticated!");
+    }
+
+    const user = await User.findOne({ clerkUserId });
+    if (!user) {
+        return res.status(404).json("User not found");
+    }
+
+    const parentComment = await Comment.findById(parentCommentId);
+    if (!parentComment) {
+        return res.status(404).json("Parent comment not found");
+    }
+
+    const description = req.body?.desc || req.body?.text;
+    if (!description || description.trim().length === 0) {
+        return res.status(400).json("Reply text is required");
+    }
+
+    const replyComment = new Comment({
+        user: user._id,
+        post: parentComment.post,
+        replyId: parentComment._id,
+        desc: description,
+    });
+
+    const savedReply = await replyComment.save();
+    return res.status(201).json(savedReply);
+};
+
 // export const addComment = async (req, res) => {
 //     try {
 //         const clerkUserId = req.auth().userId;

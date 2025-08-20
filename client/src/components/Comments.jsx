@@ -58,6 +58,31 @@ const Comments = ({ postId }) => {
         });
     };
 
+    // Build a tree: map parentId -> children[] and list of roots (no replyId)
+    const rootComments = Array.isArray(data) ? data.filter((c) => !c.replyId) : [];
+    const childrenByParentId = Array.isArray(data) ? data.reduce((acc, c) => {
+            if (c.replyId) {
+                const parentId = typeof c.replyId === "string" ? c.replyId : c.replyId?._id || c.replyId?.toString?.();
+                if (parentId) {
+                    if (!acc[parentId]) acc[parentId] = [];
+                    acc[parentId].push(c);
+                }
+            }
+            return acc;
+        }, {})
+        : {};
+
+    const renderCommentTree = (comment) => (
+        <div key={comment._id} className="flex flex-col gap-3">
+            <Comment comment={comment} postId={postId} />
+            {Array.isArray(childrenByParentId[comment._id]) && childrenByParentId[comment._id].length > 0 && (
+                <div className="pl-6 md:pl-10 flex flex-col gap-3">
+                    {childrenByParentId[comment._id].map((child) => renderCommentTree(child))}
+                </div>
+            )}
+        </div>
+    );
+
     return(
         <div className="flex flex-col gap-8 mb-12 lg:w-3/5">
             <h1 className="text-xl text-gray-500 underline ">Comments</h1>
@@ -82,9 +107,7 @@ const Comments = ({ postId }) => {
                     />
                 )}
 
-                {data.map((comment) => (
-                    <Comment key={comment._id} comment={comment} postId={postId} />
-                ))}
+                {rootComments.map((comment) => renderCommentTree(comment))}
                 </>
             )}
         </div>

@@ -55,7 +55,7 @@ const Comment = ({ comment, postId }) => {
             const token = await getToken();
             await axios.post(
                 `${import.meta.env.VITE_API_URL}/comments/${comment._id}/reply`,
-                { text: replyText },
+                { desc: replyText },
                 {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -73,7 +73,7 @@ const Comment = ({ comment, postId }) => {
     };
 
     return(
-        <div className="p-4 bg-slate-50 rounded-xl">
+        <div className={`p-4 bg-slate-50 rounded-xl ${comment.replyId ? "border border-slate-200" : ""}`}>
             <div className="flex items-center gap-4">
                 {comment.user.img && (
                     <ImageKit
