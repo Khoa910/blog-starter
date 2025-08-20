@@ -36,16 +36,26 @@ const Comment = ({ comment, postId }) => {
         },
     });
 
-    const [liked, setLiked] = useState(false);
     const [replying, setReplying] = useState(false);
     const [replyText, setReplyText] = useState("");
+    const [liked, setLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(comment.likes || 0);
 
-    // Xử lý Like
     const handleLike = () => {
-        setLiked(!liked);
-        // Nếu muốn gọi API like thì viết ở đây
-        // axios.post(`${API}/comments/${comment._id}/like`, { userId: user.id })
+    if (liked) {
+        setLikeCount(likeCount - 1);
+    } else {
+        setLikeCount(likeCount + 1);
+    }
+    setLiked(!liked);
     };
+
+    // // Xử lý Like
+    // const handleLike = () => {
+    //     setLiked(!liked);
+    //     // Nếu muốn gọi API like thì viết ở đây
+    //     // axios.post(`${API}/comments/${comment._id}/like`, { userId: user.id })
+    // };
 
     // Xử lý Reply
     const handleReply = async () => {
@@ -73,67 +83,46 @@ const Comment = ({ comment, postId }) => {
     };
 
     return(
-        <div className={`p-4 bg-slate-50 rounded-xl ${comment.replyId ? "border border-slate-200" : ""}`}>
-            <div className="flex items-center gap-4">
-                {comment.user.img && (
-                    <ImageKit
-                        src={comment.user.img}
-                        className="object-cover w-10 h-10 rounded-full"
-                        w="40"
-                    />
-                )}
-                <span className="font-medium">{comment.user.username}</span>
-                <span className="text-sm text-gray-500">{format(comment.createdAt)}</span>
-                {user && (comment.user.username === user.username || role === "admin") && (
-                    <span
-                    className="ml-auto text-xs text-red-300 cursor-pointer hover:text-red-500"
-                    onClick={() => mutation.mutate()}
-                    >
-                    delete
-                    {mutation.isPending && <span>(in progress)</span>}
-                    </span>
-                )}
-            </div>
+        <div className="mb-4">
+            {/* Khung comment */}
+            <div className={`p-4 bg-slate-50 rounded-xl ${comment.replyId ? "border border-slate-200" : ""}`}>
+                <div className="flex items-center gap-4">
+                    {comment.user.img && (<ImageKit src={comment.user.img} className="object-cover w-10 h-10 rounded-full" w="40"/>)}
+                    <span className="font-medium">{comment.user.username}</span>
+                    <span className="text-sm text-gray-500">{format(comment.createdAt)}</span>
+                    {user && (comment.user.username === user.username || role === "admin") && (
+                        <span className="ml-auto text-xs text-red-300 cursor-pointer hover:text-red-500" onClick={() => mutation.mutate()}>
+                            delete
+                            {mutation.isPending && <span>(in progress)</span>}
+                        </span>
+                    )}
+                </div>
             <div className="mt-4">
                 <p>{comment.desc}</p>
             </div>
+            </div>
 
             {/* Like + Reply actions */}
-            <div className="flex items-center gap-6 mt-2 text-sm text-gray-600">
-                <button
-                onClick={handleLike}
-                className={`flex items-center gap-1 hover:text-blue-500 ${
-                    liked ? "text-blue-600 font-medium" : ""
-                }`}
-                >
-                {liked ? <FaThumbsUp /> : <FaRegThumbsUp />}
-                Like
+            <div className="flex items-center gap-6 mt-2 ml-12 text-sm text-gray-600">
+                <button onClick={handleLike} className={`flex items-center gap-1 hover:text-blue-500 ${liked ? "text-blue-600 font-medium" : ""}`}>
+                    {liked ? <FaThumbsUp /> : <FaRegThumbsUp />}
+                    Like
+                    {likeCount > 0 && <span className="ml-1">{likeCount}</span>}
                 </button>
-
-                <button
-                onClick={() => setReplying(!replying)}
-                className="hover:text-blue-500"
-                >
-                Reply
-                </button>
+                <button onClick={() => setReplying(!replying)} className="hover:text-blue-500">Reply</button>
             </div>
 
             {/* Reply box */}
             {replying && (
-                <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-2 ml-12">
                 <input
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="Write a reply..."
                     className="flex-1 px-3 py-1 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
-                <button
-                    onClick={handleReply}
-                    className="px-3 py-1 text-sm text-white bg-blue-500 rounded-lg hover:bg-blue-600"
-                >
-                    Send
-                </button>
-                </div>
+                <button onClick={handleReply} className="px-3 py-1 text-sm text-white bg-blue-800 rounded-lg">Send</button>
+            </div>
             )}
         </div>
     )

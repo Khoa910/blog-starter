@@ -50,9 +50,11 @@ const PostList = () => {
             hasMore={!!hasNextPage}
             loader={<h4>Loading more posts...</h4>}
             endMessage={
-                <p>
-                    <b>All posts loaded!</b>
-                </p>
+                allPosts.length > 0 ? (
+                    <p>
+                        <b>All posts loaded!</b>
+                    </p>
+                ) : null
             }
         >
             {allPosts.map((post) => (

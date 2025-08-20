@@ -21,7 +21,7 @@ export const clerkWebHook = async (req, res) => {
         res.status(400).json({ message: "Webhook verification failed!" });
         }
 
-    //console.log(evt.data);
+    console.log(evt.data);
 
     if (evt.type === "user.created") {
         try {

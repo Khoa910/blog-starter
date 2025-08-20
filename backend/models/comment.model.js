@@ -7,6 +7,7 @@ const commentSchema = new Schema({
         // If this comment is a reply to another comment, store the parent comment id
         replyId: { type: Schema.Types.ObjectId, ref: "Comment", default: null },
         desc: { type: String, required: true },
+        liked: { type: Number, default: 0 }
     },
     {timestamps: true} // Automatically manage createdAt and updatedAt fields
 );

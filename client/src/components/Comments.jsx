@@ -76,7 +76,7 @@ const Comments = ({ postId }) => {
         <div key={comment._id} className="flex flex-col gap-3">
             <Comment comment={comment} postId={postId} />
             {Array.isArray(childrenByParentId[comment._id]) && childrenByParentId[comment._id].length > 0 && (
-                <div className="pl-6 md:pl-10 flex flex-col gap-3">
+                <div className="flex flex-col gap-3 pl-6 md:pl-10">
                     {childrenByParentId[comment._id].map((child) => renderCommentTree(child))}
                 </div>
             )}
