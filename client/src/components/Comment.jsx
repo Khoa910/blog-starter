@@ -15,7 +15,7 @@ const Comment = ({ comment, postId }) => {
 
     const queryClient = useQueryClient();
 
-    const mutation = useMutation({
+    const deleteMutation = useMutation({
         mutationFn: async () => {
             const token = await getToken();
             return axios.delete(
@@ -39,48 +39,64 @@ const Comment = ({ comment, postId }) => {
     const [replying, setReplying] = useState(false);
     const [replyText, setReplyText] = useState("");
     const [liked, setLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(comment.likes || 0);
+    const [likeCount, setLikeCount] = useState(typeof comment.liked === "number" ? comment.liked : 0);
 
-    const handleLike = () => {
-    if (liked) {
-        setLikeCount(likeCount - 1);
-    } else {
-        setLikeCount(likeCount + 1);
-    }
-    setLiked(!liked);
-    };
-
-    // // Xử lý Like
-    // const handleLike = () => {
-    //     setLiked(!liked);
-    //     // Nếu muốn gọi API like thì viết ở đây
-    //     // axios.post(`${API}/comments/${comment._id}/like`, { userId: user.id })
-    // };
-
-    // Xử lý Reply
-    const handleReply = async () => {
-        if (!replyText.trim()) return;
-
-        try {
+    const likeMutation = useMutation({
+        mutationFn: async ({ nextLiked }) => {
             const token = await getToken();
-            await axios.post(
-                `${import.meta.env.VITE_API_URL}/comments/${comment._id}/reply`,
-                { desc: replyText },
+            const endpoint = nextLiked ? "like" : "unlike";
+            return axios.post(
+                `${import.meta.env.VITE_API_URL}/comments/${comment._id}/${endpoint}`,
+                {},
                 {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 }
             );
+        },
+        onMutate: async ({ nextLiked }) => {
+            const previous = { prevLiked: liked, prevCount: likeCount };
+            setLiked(nextLiked);
+            setLikeCount((c) => Math.max(0, c + (nextLiked ? 1 : -1)));
+            return previous;
+        },
+        onError: (err, _vars, context) => {
+            setLiked(context?.prevLiked ?? false);
+            setLikeCount(context?.prevCount ?? 0);
+            toast.error("Failed to update like");
+        },
+        onSuccess: (res) => {
+            if (typeof res?.data?.liked === "number") {
+                setLikeCount(res.data.liked);
+            }
+        },
+    });
 
+    // Reply mutation
+    const replyMutation = useMutation({
+        mutationFn: async ({ text }) => {
+            const token = await getToken();
+            return axios.post(
+                `${import.meta.env.VITE_API_URL}/comments/${comment._id}/reply`,
+                { desc: text },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+        },
+        onSuccess: () => {
             toast.success("Reply added");
             setReplyText("");
             setReplying(false);
             queryClient.invalidateQueries({ queryKey: ["comments", postId] });
-        } catch (err) {
+        },
+        onError: () => {
             toast.error("Failed to add reply");
-        }
-    };
+        },
+    });
 
     return(
         <div className="mb-4">
@@ -91,9 +107,9 @@ const Comment = ({ comment, postId }) => {
                     <span className="font-medium">{comment.user.username}</span>
                     <span className="text-sm text-gray-500">{format(comment.createdAt)}</span>
                     {user && (comment.user.username === user.username || role === "admin") && (
-                        <span className="ml-auto text-xs text-red-300 cursor-pointer hover:text-red-500" onClick={() => mutation.mutate()}>
+                        <span className="ml-auto text-xs text-red-300 cursor-pointer hover:text-red-500" onClick={() => deleteMutation.mutate()}>
                             delete
-                            {mutation.isPending && <span>(in progress)</span>}
+                            {deleteMutation.isPending && <span>(in progress)</span>}
                         </span>
                     )}
                 </div>
@@ -104,7 +120,7 @@ const Comment = ({ comment, postId }) => {
 
             {/* Like + Reply actions */}
             <div className="flex items-center gap-6 mt-2 ml-12 text-sm text-gray-600">
-                <button onClick={handleLike} className={`flex items-center gap-1 hover:text-blue-500 ${liked ? "text-blue-600 font-medium" : ""}`}>
+                <button onClick={() => likeMutation.mutate({ nextLiked: !liked })} className={`flex items-center gap-1 hover:text-blue-500 ${liked ? "text-blue-600 font-medium" : ""}`}>
                     {liked ? <FaThumbsUp /> : <FaRegThumbsUp />}
                     Like
                     {likeCount > 0 && <span className="ml-1">{likeCount}</span>}
@@ -121,7 +137,7 @@ const Comment = ({ comment, postId }) => {
                     placeholder="Write a reply..."
                     className="flex-1 px-3 py-1 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
-                <button onClick={handleReply} className="px-3 py-1 text-sm text-white bg-blue-800 rounded-lg">Send</button>
+                <button onClick={() => replyMutation.mutate({ text: replyText })} className="px-3 py-1 text-sm text-white bg-blue-800 rounded-lg">Send</button>
             </div>
             )}
         </div>

@@ -102,8 +102,8 @@ const Write = () => {
                 className="p-2 mt-4 font-medium text-white bg-blue-800 rounded-xl w-36 disabled:bg-blue-400 disabled:cursor-not-allowed">
                     {mutation.isPending ? "Loading..." : "Post"}
                 </button>
-                {"Progress" + progress}
-                {mutation.isError && <span>{mutation.error.message}</span>}
+                {/* {"Progress" + progress} */}
+                {/* {mutation.isError && <span>{mutation.error.message}</span>} */}
             </form>
         </div>
     );
