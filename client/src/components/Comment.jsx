@@ -7,15 +7,21 @@ import axios from "axios";
 import { useState } from "react";
 import { FaRegThumbsUp, FaThumbsUp } from "react-icons/fa";
 
-const Comment = ({ comment, postId }) => {
+/*Props:
+ *  - comment: comment object (user, desc, createdAt, _id, ...; may have replyId if it's a reply)
+ *  - postId: the id of the post (to invalidate comments query by post)
+ */
+const Comment = ({ comment, postId, onReplyAdded }) => {
     const { user } = useUser();
     const { getToken } = useAuth();
 
+    // Role from Clerk publicMetadata (e.g., "admin")
     const role = user?.publicMetadata?.role;
 
     const queryClient = useQueryClient();
 
     const deleteMutation = useMutation({
+        // mutationFn: API request to delete comment
         mutationFn: async () => {
             const token = await getToken();
             return axios.delete(
@@ -27,10 +33,16 @@ const Comment = ({ comment, postId }) => {
                 }
             );
         },
+        //called after successful API response
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+            // Remove the deleted comment from cache for this post
+            queryClient.setQueryData(["comments", postId], (old) => {
+                if (!Array.isArray(old)) return old;
+                return old.filter((c) => c._id !== comment._id);
+            });
             toast.success("Comment deleted successfully");
         },
+        //handle API errors
         onError: (error) => {
             toast.error(error.response.data);
         },
@@ -38,21 +50,23 @@ const Comment = ({ comment, postId }) => {
 
     const [replying, setReplying] = useState(false);
     const [replyText, setReplyText] = useState("");
-    const [liked, setLiked] = useState(false);
+    const [liked, setLiked] = useState(!!comment.isLiked);
     const [likeCount, setLikeCount] = useState(typeof comment.liked === "number" ? comment.liked : 0);
 
     const likeMutation = useMutation({
         mutationFn: async ({ nextLiked }) => {
             const token = await getToken();
-            const endpoint = nextLiked ? "like" : "unlike";
-            return axios.post(
-                `${import.meta.env.VITE_API_URL}/comments/${comment._id}/${endpoint}`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
+            const config = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
+            if (nextLiked) {
+                return axios.put(
+                    `${import.meta.env.VITE_API_URL}/likes/${comment._id}/me`,
+                    {},
+                    config
+                );
+            }
+            return axios.delete(
+                `${import.meta.env.VITE_API_URL}/likes/${comment._id}/me`,
+                config
             );
         },
         onMutate: async ({ nextLiked }) => {
@@ -69,6 +83,9 @@ const Comment = ({ comment, postId }) => {
         onSuccess: (res) => {
             if (typeof res?.data?.liked === "number") {
                 setLikeCount(res.data.liked);
+            }
+            if (typeof res?.data?.isLiked === "boolean") {
+                setLiked(res.data.isLiked);
             }
         },
     });
@@ -87,11 +104,20 @@ const Comment = ({ comment, postId }) => {
                 }
             );
         },
-        onSuccess: () => {
+        onSuccess: (res) => {
             toast.success("Reply added");
             setReplyText("");
             setReplying(false);
-            queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+            // Insert reply into cache without refetch using parent callback
+            if (typeof onReplyAdded === "function") {
+                const saved = res?.data;
+                // Ensure minimal shape used by tree builder
+                onReplyAdded({
+                    ...saved,
+                    liked: 0,
+                    isLiked: false,
+                });
+            }
         },
         onError: () => {
             toast.error("Failed to add reply");

@@ -1,13 +1,40 @@
 import Comment from "../models/comment.model.js";
 import User from "../models/user.model.js";
-//import Post from "../models/post.model.js";
+import Like from "../models/like.model.js";
 
 export const getPostComments = async (req, res) => {
+    const clerkUserId = req.auth().userId;
+    let currentUser = null;
+    if (clerkUserId) {
+        currentUser = await User.findOne({ clerkUserId }).select("_id");
+    }
+
     const comments = await Comment.find({ post: req.params.postId })
         .populate("user", "username img")
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean();
 
-    res.json(comments);
+    const commentIds = comments.map((c) => c._id);
+    const [likeCounts, myLikes] = await Promise.all([
+        Like.aggregate([
+            { $match: { comment: { $in: commentIds } } },
+            { $group: { _id: "$comment", count: { $sum: 1 } } },
+        ]),
+        currentUser
+            ? Like.find({ user: currentUser._id, comment: { $in: commentIds } }).select("comment").lean()
+            : Promise.resolve([]),
+    ]);
+
+    const countMap = new Map(likeCounts.map((x) => [x._id.toString(), x.count]));
+    const mySet = new Set(myLikes.map((l) => l.comment.toString()));
+
+    const enriched = comments.map((c) => ({
+        ...c,
+        liked: countMap.get(c._id.toString()) || 0,
+        isLiked: mySet.has(c._id.toString()),
+    }));
+
+    res.json(enriched);
 };
 
 export const addComment = async (req, res) => {
@@ -28,7 +55,8 @@ export const addComment = async (req, res) => {
 
     const savedComment = await newComment.save();
     setTimeout(() => {
-        res.status(201).json(savedComment);
+        // include isLiked flag default false for new comment
+        res.status(201).json({ ...savedComment.toObject(), liked: 0, isLiked: false });
     }, 3000);
 
 };
@@ -65,42 +93,8 @@ export const replyToComment = async (req, res) => {
     });
 
     const savedReply = await replyComment.save();
-    return res.status(201).json(savedReply);
+    return res.status(201).json({ ...savedReply.toObject(), liked: 0, isLiked: false });
 };
-
-// export const addComment = async (req, res) => {
-//     try {
-//         const clerkUserId = req.auth().userId;
-//         const postId = req.params.postId;
-
-//         if (!clerkUserId) {
-//             return res.status(401).json("Not authenticated!");
-//         }
-
-//         const user = await User.findOne({ clerkUserId });
-//         if (!user) {
-//             return res.status(404).json("User not found");
-//         }
-
-//         const post = await Post.findById(postId);
-//         if (!post) {
-//             return res.status(404).json("Post not found");
-//         }
-
-//         const newComment = new Comment({
-//             ...req.body,
-//             user: user._id,
-//             post: postId,
-//         });
-
-//         const savedComment = await newComment.save();
-
-//         res.status(201).json(savedComment);
-//     } catch (error) {
-//         console.error("Add comment error:", error);
-//         res.status(500).json({ message: error.message });
-//     }
-// };
 
 export const deleteComment = async (req, res) => {
     const clerkUserId = req.auth().userId;
@@ -135,18 +129,14 @@ export const likeComment = async (req, res) => {
             return res.status(401).json("Not authenticated!");
         }
 
+        const user = await User.findOne({ clerkUserId }).select("_id");
+        if (!user) return res.status(404).json("User not found");
+
         const { commentId } = req.params;
-        const updated = await Comment.findByIdAndUpdate(
-            commentId,
-            { $inc: { liked: 1 } },
-            { new: true }
-        );
-
-        if (!updated) {
-            return res.status(404).json("Comment not found");
-        }
-
-        return res.status(200).json({ liked: updated.liked, _id: updated._id });
+        try { await Like.create({ user: user._id, comment: commentId }); } catch (_) {}
+        const liked = await Like.countDocuments({ comment: commentId });
+        const isLiked = !!(await Like.exists({ user: user._id, comment: commentId }));
+        return res.status(200).json({ _id: commentId, liked, isLiked });
     } catch (err) {
         return res.status(500).json({ message: err.message });
     }
@@ -159,22 +149,14 @@ export const unlikeComment = async (req, res) => {
             return res.status(401).json("Not authenticated!");
         }
 
+        const user = await User.findOne({ clerkUserId }).select("_id");
+        if (!user) return res.status(404).json("User not found");
+
         const { commentId } = req.params;
-        // Decrement only if current liked > 0 to avoid negatives
-        const decResult = await Comment.updateOne(
-            { _id: commentId, liked: { $gt: 0 } },
-            { $inc: { liked: -1 } }
-        );
-
-        if (decResult.matchedCount === 0) {
-            // Either not found or already at 0
-            const existing = await Comment.findById(commentId).select("liked");
-            if (!existing) return res.status(404).json("Comment not found");
-            return res.status(200).json({ liked: existing.liked, _id: existing._id });
-        }
-
-        const updated = await Comment.findById(commentId).select("liked");
-        return res.status(200).json({ liked: updated.liked, _id: updated._id });
+        await Like.deleteOne({ user: user._id, comment: commentId });
+        const liked = await Like.countDocuments({ comment: commentId });
+        const isLiked = !!(await Like.exists({ user: user._id, comment: commentId }));
+        return res.status(200).json({ _id: commentId, liked, isLiked });
     } catch (err) {
         return res.status(500).json({ message: err.message });
     }
