@@ -121,16 +121,48 @@ const Comments = ({ postId }) => {
         });
     };
 
-    const renderCommentTree = (comment) => (
-        <div key={comment._id} className="flex flex-col gap-3">
-            <Comment comment={comment} postId={postId} onReplyAdded={handleReplyAdded} />
-            {Array.isArray(childrenByParentId[comment._id]) && childrenByParentId[comment._id].length > 0 && (
-                <div className="flex flex-col gap-3 pl-6 md:pl-10">
-                    {childrenByParentId[comment._id].map((child) => renderCommentTree(child))}
+    const renderCommentTree = (comment, depth = 0) => {
+        const children = Array.isArray(childrenByParentId[comment._id]) ? childrenByParentId[comment._id] : [];
+
+        // Choose layout by depth:
+        // depth 0: no indent
+        // depth 1: indent a bit
+        // depth >= 2: keep same indent as depth 1, add branch lines
+        const baseIndent = depth === 0 ? "" : "pl-6 md:pl-10";
+
+        const node = (
+            <Comment key={comment._id} comment={comment} postId={postId} onReplyAdded={handleReplyAdded} />
+        );
+
+        const wrappedNode = depth <= 1 ? (
+            <div key={comment._id} className={`flex flex-col gap-3 ${baseIndent}`}>
+                {node}
+            </div>
+        ) : (
+            <div key={comment._id} className={`flex flex-col gap-3 ${baseIndent}`}>
+                <div className="flex gap-3">
+                    <div className="relative w-4">
+                        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-300"></div>
+                        <div className="absolute top-4 left-1/2 w-4 h-px bg-slate-300"></div>
+                    </div>
+                    <div className="flex-1">
+                        {node}
+                    </div>
                 </div>
-            )}
-        </div>
-    );
+            </div>
+        );
+
+        return (
+            <div className="flex flex-col gap-3" key={`${comment._id}-wrap`}>
+                {wrappedNode}
+                {children.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                        {children.map((child) => renderCommentTree(child, depth + 1))}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return(
         <div className="flex flex-col gap-8 mb-12 lg:w-3/5">
@@ -141,7 +173,7 @@ const Comments = ({ postId }) => {
             </form>
             {/* Immediately display the comment you just posted on the interface, while the request sent to the server
              is still being processed (no response received yet). */}
-            {isPending ? ("Loading...") : error ? ("Error loading comments!") : (rootComments.map((comment) => renderCommentTree(comment)))}
+            {isPending ? ("Loading...") : error ? ("Error loading comments!") : (rootComments.map((comment) => renderCommentTree(comment, 0)))}
         </div>
     )
 }
