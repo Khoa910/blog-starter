@@ -55,6 +55,12 @@ const SinglePostPage = () => {
                     <h1 className="text-xl font-semibold md:text-3xl xl:text-4xl 2xl:text-5xl">
                         {data.title}
                     </h1>
+                    {/* mobile/tablet cover image */}
+                    {data.img && (
+                        <div className="block lg:hidden">
+                            <ImageKit src={data.img} w="800" className="w-full h-auto object-cover rounded-2xl" />
+                        </div>
+                    )}
                     <div className="flex items-center gap-2 text-sm text-gray-400">
                         <span>Written by</span>
                         <Link className="text-blue-800">{data.user.username}</Link>

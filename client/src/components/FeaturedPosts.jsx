@@ -26,7 +26,7 @@ const FeaturedPosts = () => {
     return (
         <div className="flex flex-col gap-8 mt-8 lg:flex-row">
             {/* First */}
-            {posts[0] && <div className="flex flex-col w-full gap-4 lg:w1/2">
+            {posts[0] && <div className="flex flex-col w-full gap-4 lg:w-1/2">
                 {/* image */}
                 {posts[0].img && <ImageKit src={posts[0].img} className="object-cover rounded-3xl" />}
                 {/* detail */}
@@ -39,7 +39,7 @@ const FeaturedPosts = () => {
                 <Link to={posts[0].slug} className="text-xl font-semibold lg:text-3xl lg:font-bold">{posts[0].title}</Link>
             </div>}
             {/* Others */}
-            <div className="flex flex-col w-full gap-4 lg:w1/2">
+            <div className="flex flex-col w-full gap-4 lg:w-1/2">
                 {/* Second */}
                 {posts[1] && <div className="flex justify-between gap-4 lg:h-1/3">
                     {posts[1].img && <div className="w-1/3 aspect-video">
