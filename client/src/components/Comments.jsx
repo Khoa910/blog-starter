@@ -8,6 +8,9 @@ import { v4 as uuid } from "uuid";
 const Comments = ({ postId }) => {
     const { user } = useUser();
     const { getToken } = useAuth();
+    // Log user image URL for debugging
+    //console.log("User image URL:", user?.imageUrl);
+    //console.log("User object:", user);
     
     //Get a list of comments for a post from the backend with auth (to compute isLiked)
     const { isPending, error, data } = useQuery({
@@ -52,8 +55,8 @@ const Comments = ({ postId }) => {
                 desc: newComment.desc,
                 createdAt: new Date().toISOString(),
                 user: {
-                    img: user?.imageUrl,
-                    username: user?.username,
+                    img: user?.imageUrl || null, // Ensure it's null if no image
+                    username: user?.username || "Anonymous",
                 },
                 liked: 0,
                 isLiked: false,

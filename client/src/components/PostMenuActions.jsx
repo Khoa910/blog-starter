@@ -23,8 +23,9 @@ const PostMenuActions = ({ post }) => {
     });
 
     const isAdmin = user?.publicMetadata?.role === "admin" || false;
-    const isSaved = savedPosts?.data?.some((p) => p === post._id) || false;
+    const isSaved = savedPosts?.data?.some((p) => p === post._id) || false; // Check if current post is saved
 
+    // Mutation to delete post
     const deleteMutation = useMutation({
         mutationFn: async () => {
             const token = await getToken();
@@ -43,16 +44,15 @@ const PostMenuActions = ({ post }) => {
         },
     });
 
-    const queryClient = useQueryClient();
+    const queryClient = useQueryClient(); // to invalidate cache after mutating
 
+    // Mutation to save / unsave the post
     const saveMutation = useMutation({
         mutationFn: async () => {
             const token = await getToken();
             return axios.patch(
                 `${import.meta.env.VITE_API_URL}/users/save`,
-                {
-                    postId: post._id,
-                },
+                { postId: post._id }, // send ID of post to save
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -61,44 +61,47 @@ const PostMenuActions = ({ post }) => {
             );
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["savedPosts"] });
+            queryClient.invalidateQueries({ queryKey: ["savedPosts"] }); // Refresh savedPosts query to update the interface
         },
         onError: (error) => {
             toast.error(error.response.data);
         },
     });
 
+    // Mutation to mark article as featured
     const featureMutation = useMutation({
         mutationFn: async () => {
             const token = await getToken();
             return axios.patch(
                 `${import.meta.env.VITE_API_URL}/posts/feature`,
+                { postId: post._id },
                 {
-                postId: post._id,
-                },
-                {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 }
             );
         },
         onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["post", post.slug] });
+            queryClient.invalidateQueries({ queryKey: ["post", post.slug] });
         },
         onError: (error) => {
-        toast.error(error.response.data);
+            toast.error(error.response.data);
         },
     });
 
+    // Function to handle when user deletes post
     const handleDelete = () => {
         deleteMutation.mutate();
     };
 
+    // Function to handle when admin labels a post "featured"
     const handleFeature = () => {
         featureMutation.mutate();
     };
 
+    
+    // Function to handle when user saves/unsaves post
     const handleSave = () => {
         if (!user) {
             return navigate("/login");
@@ -132,23 +135,21 @@ const PostMenuActions = ({ post }) => {
 
             {isAdmin && (
                 <div className="flex items-center gap-2 py-2 text-sm cursor-pointer" onClick={handleFeature}>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 48 48"
-                    width="20px"
-                    height="20px"
-                >
-                    <path
-                    d="M24 2L29.39 16.26L44 18.18L33 29.24L35.82 44L24 37L12.18 44L15 29.24L4 18.18L18.61 16.26L24 2Z"
-                    stroke="black"
-                    strokeWidth="2"
-                    fill={ featureMutation.isPending ? post.isFeatured ? "none" : "black" : post.isFeatured ? "black" : "none" }
-                    />
-                </svg>
-                <span>Feature</span>
-                {featureMutation.isPending && (
-                    <span className="text-xs">(in progress)</span>
-                )}
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 48 48"
+                        width="20px"
+                        height="20px"
+                    >
+                        <path
+                        d="M24 2L29.39 16.26L44 18.18L33 29.24L35.82 44L24 37L12.18 44L15 29.24L4 18.18L18.61 16.26L24 2Z"
+                        stroke="black"
+                        strokeWidth="2"
+                        fill={ featureMutation.isPending ? post.isFeatured ? "none" : "black" : post.isFeatured ? "black" : "none" }
+                        />
+                    </svg>
+                    <span>Feature</span>
+                    { featureMutation.isPending && (<span className="text-xs">(in progress)</span>) }
                 </div>
             )}
 
@@ -172,9 +173,7 @@ const PostMenuActions = ({ post }) => {
                 32 40 L 32 15 A 1.0001 1.0001 0 0 0 30.984375 13.986328 z" />
                 </svg>
                 <span>Delete this post</span>
-                {deleteMutation.isPending && (
-                    <span className="text-xs">(in progress)</span>
-                )}
+                { deleteMutation.isPending && (<span className="text-xs">(in progress)</span>) }
             </div>}
         </div>
     )

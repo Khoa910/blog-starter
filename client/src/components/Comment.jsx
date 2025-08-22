@@ -129,7 +129,17 @@ const Comment = ({ comment, postId, onReplyAdded }) => {
             {/* Khung comment */}
             <div className={`p-4 bg-slate-50 rounded-xl ${comment.replyId ? "border border-slate-200" : ""}`}>
                 <div className="flex items-center gap-4">
-                    {comment.user.img && (<ImageKit src={comment.user.img} className="object-cover w-10 h-10 rounded-full" w="40"/>)}
+                    {comment.user.img && (
+                        <img 
+                            src={comment.user.img} 
+                            alt={comment.user.username}
+                            className="object-cover w-10 h-10 rounded-full"
+                            onError={(e) => {
+                                e.target.src = "/userImg.jpeg"; // Fallback image
+                                e.target.onerror = null; // Prevent infinite loop
+                            }}
+                        />
+                    )}
                     <span className="font-medium">{comment.user.username}</span>
                     <span className="text-sm text-gray-500">{format(comment.createdAt)}</span>
                     {user && (comment.user.username === user.username || role === "admin") && (

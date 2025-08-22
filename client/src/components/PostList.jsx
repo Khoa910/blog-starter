@@ -24,8 +24,6 @@ const PostList = () => {
         fetchNextPage,
         hasNextPage,
         isFetching,
-        isFetchingNextPage,
-        status,
     } = useInfiniteQuery({
         queryKey: ["posts", searchParams.toString()],
         queryFn: ({ pageParam = 1 }) => fetchPosts(pageParam, searchParams),
@@ -38,8 +36,6 @@ const PostList = () => {
 
     // if (status === "error") return "Something went wrong!";
     if (error) return "Something went wrong!";
-
-    //console.log(data)
 
     //combine all posts in each of page into 1 big array
     const allPosts = data?.pages?.flatMap(page => page.posts) || [];

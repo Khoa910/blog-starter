@@ -18,25 +18,28 @@ const SinglePostPage = () => {
 
     const { isPending, error, data } = useQuery({
         queryKey: ["post", slug],
-        queryFn: () => fetchPost(slug),
+        queryFn: () => fetchPost(slug), // Function to get post data by slug
     });
 
     if (isPending) return "loading...";
     if (error) return "Something went wrong!" + error.message;
     if (!data) return "Post not found!";
-    
+
+    //function to parse HTML content
     const parseContent = (html) => {
+        // Create a temporary div to parse the HTML string into DOM nodes
         const temp = document.createElement("div");
         temp.innerHTML = html;
 
         const result = [];
         temp.childNodes.forEach((node, idx) => {
-            if (node.nodeName === "P") {
+            if (node.nodeName === "P") { // If it is a <p> tag
                 if (node.innerText.trim()) {
-                    result.push(<p key={idx}>{node.innerText}</p>);
+                    result.push(<p key={idx}>{node.innerText}</p>); // If there is text -> add to the result array
                 }
                 const img = node.querySelector("img");
                 if (img) {
+                    // Add image to result array
                     result.push(<img key={`${idx}-img`} src={img.src} alt="" className="w-full max-w-[600px] h-auto max-h-[800px] object-cover rounded-xl mx-auto my-3 shadow-md"/>);
                 }
             }
@@ -78,7 +81,11 @@ const SinglePostPage = () => {
                     <h1 className="mb-4 text-sm font-medium">Author</h1>
                     <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-8">
-                        {data.user.img && <Image src={data.user.img} className="object-cover w-12 h-12 rounded-full" w="48" h="48"/>}
+                        {data.user.img && (<img 
+                            src={data.user.img} 
+                            alt={data.user.username}
+                            className="object-cover w-10 h-10 rounded-full"
+                        />)}
                         <Link className="text-blue-800">{data.user.username}</Link>
                     </div>
                         <p className="text-sm text-gray-500">sdf</p>
@@ -93,7 +100,7 @@ const SinglePostPage = () => {
                     </div>
                     
                     <PostMenuActions post={data} />
-                    <h1 className="mt-8 mb-4 text-sm font-medium">Categories</h1>
+                    {/* <h1 className="mt-8 mb-4 text-sm font-medium">Categories</h1>
                     <div className="flex flex-col gap-2 text-sm">
                         <Link className="underline">All</Link>
                         <Link className="underline" to="/">Web Design</Link>
@@ -101,7 +108,7 @@ const SinglePostPage = () => {
                         <Link className="underline" to="/">Databases</Link>
                         <Link className="underline" to="/">Search Engines</Link>
                         <Link className="underline" to="/">Marketing</Link>
-                    </div>
+                    </div> */}
                     <h1 className="mt-8 mb-4 text-sm font-medium">Search</h1>
                     <Search/>
                 </div>

@@ -17,14 +17,15 @@ const Write = () => {
     const [progress, setProgress] = useState(0);
     const navigate = useNavigate();
 
+    //If an image/video is uploaded/selected, append <image>/<video> tag to `value` else keeps editor content in sync
     useEffect(() => {
         img && setValue((prev) => prev + `<p><image src="${img.url}"/></p>`);
     }, [img]);
-
     useEffect(() => {
         video && setValue((prev) => prev + `<p><iframe class="ql-video" src="${video.url}"/></p>`);
     }, [video]);
 
+    //mutation for creating a new post
     const { getToken } = useAuth();
     const mutation = useMutation({
         mutationFn: async (newPost) => {
@@ -37,21 +38,21 @@ const Write = () => {
         },
         onSuccess: (res) => {
             toast.success("Post created successfully!");
-            navigate(`/${res.data.slug}`);
+            navigate(`/${res.data.slug}`); //Navigate to the new post’s page (using slug from API response)
         }
     })
 
+    //If Clerk hasn’t finished
     if(!isLoaded) {
         return <div className="">Loading...</div>
     }
-
     if(!isLoaded && !isSignIn) {
         return <div className="">You should login!</div>
     }
 
     const handleSubmit = e => {
         e.preventDefault();
-        const formData = new FormData(e.target);
+        const formData = new FormData(e.target); //Collect values using FormData
         const data = {
             img: cover.filePath || "",
             title: formData.get("title"),
@@ -59,8 +60,7 @@ const Write = () => {
             desc: formData.get("desc"),
             content: value,
         }
-
-        console.log(data);
+        //console.log(data);
         mutation.mutate(data)
     }  
     
