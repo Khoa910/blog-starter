@@ -20,18 +20,16 @@ export const getPostComments = async (req, res) => {
             { $match: { comment: { $in: commentIds } } },
             { $group: { _id: "$comment", count: { $sum: 1 } } },
         ]),
-        currentUser
-            ? Like.find({ user: currentUser._id, comment: { $in: commentIds } }).select("comment").lean()
-            : Promise.resolve([]),
+        currentUser ? Like.find({ user: currentUser._id, comment: { $in: commentIds } }).select("comment").lean() : Promise.resolve([]),
     ]);
 
     const countMap = new Map(likeCounts.map((x) => [x._id.toString(), x.count]));
     const mySet = new Set(myLikes.map((l) => l.comment.toString()));
 
-    const enriched = comments.map((c) => ({
-        ...c,
-        liked: countMap.get(c._id.toString()) || 0,
-        isLiked: mySet.has(c._id.toString()),
+    const enriched = comments.map((thisComment) => ({
+        ...thisComment,
+        liked: countMap.get(thisComment._id.toString()) || 0,
+        isLiked: mySet.has(thisComment._id.toString()),
     }));
 
     res.json(enriched);
@@ -54,11 +52,9 @@ export const addComment = async (req, res) => {
     });
 
     const savedComment = await newComment.save();
-    setTimeout(() => {
-        // include isLiked flag default false for new comment
-        res.status(201).json({ ...savedComment.toObject(), liked: 0, isLiked: false });
-    }, 3000);
-
+    
+    // include isLiked flag default false for new comment
+    res.status(201).json({ ...savedComment.toObject(), liked: 0, isLiked: false });
 };
 
 export const replyToComment = async (req, res) => {

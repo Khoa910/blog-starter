@@ -21,10 +21,9 @@ export const clerkWebHook = async (req, res) => {
         res.status(400).json({ message: "Webhook verification failed!" });
         }
 
-    console.log(evt.data);
-
+    //console.log(evt.data);
     if (evt.type === "user.created") {
-        try {
+        // try {
             const newUser = new User({
                 clerkUserId: evt.data.id,
                 username: evt.data.username || evt.data.email_addresses[0].email_address,
@@ -33,13 +32,12 @@ export const clerkWebHook = async (req, res) => {
             });
             await newUser.save();
             console.log("User saved:", newUser);
-        } catch (err) {
-            console.error("Error saving user:", err.message);
-        }
+        // } catch (err) {
+        //     console.error("Error saving user:", err.message);
+        // }
     }
 
     if (evt.type === "user.updated") {
-        // Tìm user theo clerkUserId và cập nhật thông tin
         const updatedUser = await User.findOneAndUpdate({ clerkUserId: evt.data.id },
             {
                 username: evt.data.username || evt.data.email_addresses[0].email_address,
@@ -51,11 +49,9 @@ export const clerkWebHook = async (req, res) => {
 
     if (evt.type === "user.deleted") {
         const deletedUser = await User.findOneAndDelete({clerkUserId: evt.data.id,});
-
         await Post.deleteMany({user:deletedUser._id})
         await Comment.deleteMany({user:deletedUser._id})
     }
-
     return res.status(200).json({
         message: "Webhook received",
     });

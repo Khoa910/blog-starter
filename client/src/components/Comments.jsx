@@ -3,10 +3,10 @@ import Comment from "./Comment";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
+import { v4 as uuid } from "uuid";
 
 const Comments = ({ postId }) => {
     const { user } = useUser();
-    //console.log(user?.emailAddresses?.[0]?.emailAddress);
     const { getToken } = useAuth();
     
     //Get a list of comments for a post from the backend with auth (to compute isLiked)
@@ -14,13 +14,14 @@ const Comments = ({ postId }) => {
         queryKey: ["comments", postId],
         queryFn: async () => {
             try {
+                // If there is a token -> send Bearer so the backend knows which user is requesting
                 const token = await getToken();
-                const res = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/comments/${postId}`,
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/comments/${postId}`,
                     token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
                 );
                 return res.data;
             } catch (err) {
+                // If error (eg no token) -> try fetch without auth
                 const res = await axios.get(`${import.meta.env.VITE_API_URL}/comments/${postId}`);
                 return res.data;
             }
@@ -32,7 +33,7 @@ const Comments = ({ postId }) => {
     const addCommentMutation = useMutation({
         mutationFn: async (newComment) => {
             const token = await getToken();
-            return axios.post(
+            const res = await axios.post(
                 `${import.meta.env.VITE_API_URL}/comments/${postId}`,
                 newComment,
                 {
@@ -41,12 +42,13 @@ const Comments = ({ postId }) => {
                     },
                 }
             );
+            return res.data; // Return res.data so onSuccess receives saved directly
         },
         onMutate: async (newComment) => {
             await queryClient.cancelQueries({ queryKey: ["comments", postId] });
             const previous = queryClient.getQueryData(["comments", postId]);
             const optimistic = {
-                _id: `temp-${Date.now()}`,
+                _id: uuid(), // Use uuid() instead of temp-${Date.now()}
                 desc: newComment.desc,
                 createdAt: new Date().toISOString(),
                 user: {
@@ -61,10 +63,12 @@ const Comments = ({ postId }) => {
         },
         onError: (error, _newComment, context) => {
             queryClient.setQueryData(["comments", postId], context?.previous);
-            toast.error(error?.response?.data || "Failed to add comment");
+            // Show detailed error message instead of raw data
+            const errorMessage = error?.response?.data?.message || error?.response?.data || error?.message || "Failed to add comment";
+            toast.error(errorMessage);
         },
-        onSuccess: (res, _newComment, context) => {
-            const saved = res?.data;
+        onSuccess: (saved, _newComment, context) => {
+            // Now saved is directly the comment data, not the whole response
             queryClient.setQueryData(["comments", postId], (old) => {
                 if (!Array.isArray(old)) return old;
                 const idx = old.findIndex((c) => c._id === context?.optimisticId);
@@ -82,6 +86,11 @@ const Comments = ({ postId }) => {
                 return [enriched, ...old];
             });
         },
+        onSettled: () => {
+            // Sync completely after mutation settles (success or error)
+            queryClient.invalidateQueries(["comments", postId]);
+        },
+        optimistic: true, // Enable optimistic updates for better UX
     });
 
     const handleSubmit = (e) => {
@@ -113,11 +122,19 @@ const Comments = ({ postId }) => {
         }, {})
         : {};
 
+    const handleReplyAdded = (reply) => {
+        // Insert new reply into the cached flat list for this post
+        queryClient.setQueryData(["comments", postId], (old) => {
+            if (!Array.isArray(old)) return old;
+            return [reply, ...old];
+        });
+    };
+
     const renderCommentTree = (comment) => (
         <div key={comment._id} className="flex flex-col gap-3">
             <Comment comment={comment} postId={postId} onReplyAdded={handleReplyAdded} />
             {Array.isArray(childrenByParentId[comment._id]) && childrenByParentId[comment._id].length > 0 && (
-                <div className="flex flex-col gap-3 pl-6 md:pl-10">
+                <div className="flex flex-col gap-3 pl-3 md:pl-4">
                     {childrenByParentId[comment._id].map((child) => renderCommentTree(child))}
                 </div>
             )}
@@ -125,11 +142,21 @@ const Comments = ({ postId }) => {
     );
 
     return(
-        <div className="flex flex-col gap-8 mb-12 w-full lg:w-2/3 xl:w-3/4 max-w-4xl">
+        <div className="flex flex-col w-full max-w-4xl gap-8 mb-12 lg:w-2/3 xl:w-3/4">
             <h1 className="text-xl text-gray-500 underline ">Comments</h1>
             <form onSubmit={handleSubmit} className="flex items-center justify-between w-full gap-8">
                 <textarea name="desc" placeholder="Write a comment..." className="w-full p-4 rounded-xl"/>
-                <button className="px-4 py-3 font-medium text-white bg-blue-800 rounded-xl">Send</button>
+                <button 
+                    type="submit"
+                    disabled={addCommentMutation.isLoading}
+                    className={`px-4 py-3 font-medium text-white rounded-xl ${
+                        addCommentMutation.isLoading 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-800 hover:bg-blue-700'
+                    }`}
+                >
+                    {addCommentMutation.isLoading ? 'Sending...' : 'Send'}
+                </button>
             </form>
             {/* Immediately display the comment you just posted on the interface, while the request sent to the server
              is still being processed (no response received yet). */}
