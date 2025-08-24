@@ -7,6 +7,7 @@ import webhookRouter from './routes/webhook.route.js';
 import connectDB from './lib/connectDB.js'; // Assuming you have a db.js file for MongoDB connection
 import { clerkMiddleware } from "@clerk/express";
 import cors from 'cors';
+import { runCrawler } from "./crawler/crawler.js";
 
 const app = express();
 app.use(cors(process.env.CLIENT_URL));
@@ -22,21 +23,6 @@ app.use(function (req, res, next) {
     );
     next();
 });
-// // CORS
-// app.use(cors({ origin: process.env.CLIENT_URL }));
-
-// // Clerk middleware cho authentication
-// app.use(clerkMiddleware());
-
-// // Chỉ bỏ qua express.json cho route webhook Clerk
-// app.use((req, res, next) => {
-//   if (req.originalUrl === "/webhooks/clerk") {
-//     next(); // giữ raw body cho webhook
-//   } else {
-//     express.json()(req, res, next);
-//   }
-// });
-// app.use("/webhooks", webhookRouter);
 
 app.get("/auth-state", (req, res) => {
     const authState = req.auth();
@@ -66,7 +52,35 @@ app.use((error, req, res, next) => {
   });
 });
 
+// app.get("/crawl", async (req, res) => {
+//   try {
+//     await runCrawler(); // chạy crawler
+//     res.send("Crawler finished!");
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send("Crawler error!");
+//   }
+// });
+
+app.get("/crawl", async (req, res) => {
+  try {
+    const posts = await runCrawler(); // chạy crawler
+    console.log(posts); // in ra terminal localhost
+
+    res.json(posts); // trả về JSON cho client cũng được
+  } catch (err) {
+    console.error("Crawler error:", err.message);
+    res.status(500).send("Crawler error!");
+  }
+});
+
 app.listen(3000, () => {
     connectDB(); // Connect to MongoDB before starting the server
   console.log('Server is running on port 3000');
 });
+
+
+
+// Export crawler modules để có thể sử dụng từ bên ngoài
+// export { crawlVibloPosts, runCrawler } from './crawler/index.js';
+// export * from './crawler/crawler-config.js';

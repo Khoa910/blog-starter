@@ -134,10 +134,6 @@ const Comment = ({ comment, postId, onReplyAdded }) => {
                             src={comment.user.img} 
                             alt={comment.user.username}
                             className="object-cover w-10 h-10 rounded-full"
-                            onError={(e) => {
-                                e.target.src = "/userImg.jpeg"; // Fallback image
-                                e.target.onerror = null; // Prevent infinite loop
-                            }}
                         />
                     )}
                     <span className="font-medium">{comment.user.username}</span>

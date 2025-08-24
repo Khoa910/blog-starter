@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import Post from "../models/post.model.js";
 
 export const getUserSavedPosts = async (req, res) => {
   const clerkUserId = req.auth().userId;
@@ -31,4 +32,36 @@ export const savePost = async (req, res) => {
     });
   }
   res.status(200).json(isSaved ? "Post unsaved" : "Post saved");
+};
+
+export const getSavedPosts = async (req, res) => {
+    try {
+        const { userId, page = 1, limit = 10 } = req.query;
+
+        if (!userId) return res.status(400).json({ message: "UserId required" });
+
+        // Tìm user
+        const user = await User.findOne({ clerkUserId: userId });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Lấy danh sách savedPosts
+        const savedPostIds = user.savedPosts;
+
+        // Phân trang
+        const skip = (page - 1) * limit;
+        const posts = await Post.find({ _id: { $in: savedPostIds } })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
+            .lean();
+
+            console.log(posts);
+        res.json({
+            posts,
+            hasMore: savedPostIds.length > page * limit
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
 };

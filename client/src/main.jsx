@@ -10,6 +10,7 @@ import RegisterPage from './routes/RegisterPage.jsx';
 import SinglePostPage from './routes/SinglePostPage.jsx';
 import Homepage from './routes/Homepage.jsx';
 import MainLayout from './layouts/MainLayout.jsx';
+import SavedPostPage from './routes/SavedPostPage.jsx';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -49,6 +50,10 @@ const router = createBrowserRouter([
       {
         path: "/register",
         element: <RegisterPage />,
+      },
+      {
+        path: "/savedpost",
+        element: <SavedPostPage />,
       },
     ]
   }

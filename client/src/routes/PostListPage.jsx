@@ -7,7 +7,7 @@ const PostListPage = () => {
 
     return (
         <div className=''>
-            <h1 className="mb-8 text-2xl">Development Blog</h1> 
+            <h1 className="mb-8 text-4xl">Development Blog</h1> 
             <button onClick={() => setOpen((prev) => !prev)} className="px-4 py-2 mb-4 text-sm text-white bg-blue-800 md:hidden rounded-2xl">
                 {open ? "Close" : "Filter on Search"}
             </button>
