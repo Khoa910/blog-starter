@@ -7,11 +7,12 @@ import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "timeago.js";
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useNavigate } from 'react-router-dom';
 import 'react-quill-new/dist/quill.snow.css';
 import ReactQuill from "react-quill-new";
+import Upload from '../components/Upload';
 
 const fetchPost = async (slug) => {
   const res = await axios.get(`${import.meta.env.VITE_API_URL}/posts/${slug}`);
@@ -35,6 +36,30 @@ const SinglePostPage = () => {
     const [editDesc, setEditDesc] = useState("");
     const [editContent, setEditContent] = useState("");
 
+    useEffect(() => {
+        if (data) {
+            setEditTitle(data.title);
+            setEditDesc(data.desc);
+            setEditContent(data.content);
+        }
+    }, [data]);
+    
+    const quillRef = useRef(null);
+
+    const handleImageUpload = (img) => {
+        const editor = quillRef.current.getEditor();
+        const range = editor.getSelection(true); // get cursor position
+        editor.insertEmbed(range.index, "image", img.url);
+        editor.setSelection(range.index + 1); // set cursor after the inserted image
+    };
+
+    const handleVideoUpload = (video) => {
+        const editor = quillRef.current.getEditor();
+        const range = editor.getSelection(true);
+        editor.insertEmbed(range.index, "video", video.url);
+        editor.setSelection(range.index + 1);
+    };
+    
     const editMutation = useMutation({
         mutationFn: async ({ slug, title, desc, content }) => {
             const token = await getToken();
@@ -54,14 +79,6 @@ const SinglePostPage = () => {
             toast.error(error.response?.data || "Update failed");
         },
     });
-
-    useEffect(() => {
-        if (data) {
-            setEditTitle(data.title);
-            setEditDesc(data.desc);
-            setEditContent(data.content);
-        }
-    }, [data]);
 
     if (isPending) return "loading...";
     if (error) return "Something went wrong!" + error.message;
@@ -135,12 +152,21 @@ const SinglePostPage = () => {
                         <Link className="text-blue-800">{data.category}</Link>
                         <span>{format(data.createdAt)}</span>
                         {user && (data.user.username === user.username) && (
-                            <button
-                                className="px-3 py-1 ml-auto text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
-                                onClick={() => setIsEditing(!isEditing)}
-                            >
-                                {isEditing ? "Cancel" : "Edit"}
-                            </button>
+                            <div className="flex items-center gap-2 ml-auto">
+                                <button
+                                    className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
+                                    onClick={() => setIsEditing(!isEditing)}
+                                >
+                                    {isEditing ? "Cancel" : "Edit"}
+                                </button>
+
+                                {isEditing && (
+                                    <>
+                                        <Upload type="image" setData={handleImageUpload}>🌆</Upload>
+                                        <Upload type="video" setData={handleVideoUpload}>▶️</Upload>
+                                    </>
+                                )}
+                            </div>
                         )}
                     </div>
                     {isEditing ? (
@@ -157,25 +183,19 @@ const SinglePostPage = () => {
                                 onChange={(e) => setEditDesc(e.target.value)}
                                 placeholder="Description"
                             />
-                            {/* <textarea
-                                className="w-full h-64 p-2 border rounded"
-                                value={editContent}
-                                onChange={(e) => setEditContent(e.target.value)}
-                            /> */}
                             <ReactQuill
+                                ref={quillRef}
                                 theme="snow"
-                                className="w-full p-2 bg-white border rounded h-[500px]"
+                                className="ql-editor w-full p-2 bg-white border rounded h-[500px]"
                                 value={editContent}
                                 onChange={setEditContent}
                             />
-                            <button className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700" onClick={() => handleSave()}
+                            <button className="relative z-10 px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700" onClick={() => handleSave()}
                             >Save</button>
                         </div> 
-                    ) : null }
-
-                    <p className={`font-medium text-gray-500 ${isEditing ? "invisible" : ""}`}>
-                        {data.desc}
-                    </p>
+                            ) : (
+                                <p className="mt-2 font-medium text-gray-500">{data.desc}</p>
+                    )}
                 </div>
                 {data.img && <div className="hidden w-1/5 lg:block">
                     <ImageKit src={data.img} w="600" className="rounded-2xl"/>

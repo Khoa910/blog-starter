@@ -27,3 +27,7 @@ body{
   height: 450px !important; /* vùng nhập */
   overflow-y: auto; /* cuộn khi text quá dài */
 }
+
+.ql-editor p:empty {
+    margin: 0; /* xóa margin cho thẻ p trống */
+}
