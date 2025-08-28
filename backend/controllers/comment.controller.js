@@ -44,7 +44,6 @@ export const addComment = async (req, res) => {
     }
 
     const user = await User.findOne({ clerkUserId });
-
     const newComment = new Comment({
         ...req.body,
         user: user._id,
@@ -52,7 +51,6 @@ export const addComment = async (req, res) => {
     });
 
     const savedComment = await newComment.save();
-    
     // include isLiked flag default false for new comment
     res.status(201).json({ ...savedComment.toObject(), liked: 0, isLiked: false });
 };
@@ -75,7 +73,7 @@ export const replyToComment = async (req, res) => {
         return res.status(404).json("Parent comment not found");
     }
 
-    //Chấp nhận nội dung từ req.body.desc (hoặc req.body.text để tương thích)
+    //Accept content from req.body.desc (or req.body.text for compatibility)
     const description = req.body?.desc || req.body?.text;
     if (!description || description.trim().length === 0) {
         return res.status(400).json("Reply text is required");
@@ -83,7 +81,7 @@ export const replyToComment = async (req, res) => {
 
     const replyComment = new Comment({
         user: user._id,
-        post: parentComment.post, // dùng ObjectId sẵn có từ bình luận cha
+        post: parentComment.post, // use ObjectId from parent comment
         replyId: parentComment._id,
         desc: description,
     });
@@ -92,68 +90,107 @@ export const replyToComment = async (req, res) => {
     return res.status(201).json({ ...savedReply.toObject(), liked: 0, isLiked: false });
 };
 
+export const editComment = async (req, res) => {
+    const clerkUserId = req.auth().userId;
+    const commentId = req.params.id;
+
+    if (!clerkUserId) {
+        return res.status(401).json("Not authenticated!");
+    }
+
+    const role = req.auth.sessionClaims?.metadata?.role || "user";
+    const { desc } = req.body;
+
+    if (!desc || desc.trim().length === 0) {
+        return res.status(400).json("Description is required");
+    }
+
+    let updatedComment;
+    if (role === "admin") {
+        updatedComment = await Comment.findByIdAndUpdate(
+            commentId,
+            { desc },
+            { new: true }
+        );
+    } else {
+        const user = await User.findOne({ clerkUserId });
+        updatedComment = await Comment.findOneAndUpdate(
+            { _id: commentId, user: user._id },
+            { desc },
+            { new: true }
+        );
+    }
+
+    if (!updatedComment) {
+        return res.status(404).json("Comment not found or not authorized");
+    }
+
+    res.status(200).json(updatedComment);
+};
+
 export const deleteComment = async (req, res) => {
     const clerkUserId = req.auth().userId;
     const id = req.params.id;
 
-    if(!clerkUserId){
+    if (!clerkUserId) {
         return res.status(401).json("not authenticated");
     }
 
     const role = req.auth.sessionClaims?.metadata?.role || "user";
+    let deletedComment;
 
     if (role === "admin") {
-        await Comment.findByIdAndDelete(req.params.id);
-        return res.status(200).json("Comment has been deleted");
+        deletedComment = await Comment.findByIdAndDelete(id);
+    } else {
+        const user = await User.findOne({ clerkUserId });
+        deletedComment = await Comment.findOneAndDelete({ _id: id, user: user._id });
+        if (!deletedComment) {
+            return res.status(403).json("You can only delete your own comments");
+        }
     }
 
-    const user = await User.findOne({clerkUserId});
-
-    const deletedComment = await Comment.findOneAndDelete({_id: id, user: user._id});
-
-    if(!deletedComment){
-        return res.status(403).json("You can only delete your own comments");
+    if (!deletedComment) {
+        return res.status(404).json("Comment not found");
     }
+    await Comment.deleteMany({ replyId: deletedComment._id });
 
-    res.status(200).json("Comment deleted successfully");
+    res.status(200).json("Comment and its replies deleted successfully");
 };
 
 export const likeComment = async (req, res) => {
-    try {
-        const clerkUserId = req.auth().userId;
-        if (!clerkUserId) {
-            return res.status(401).json("Not authenticated!");
-        }
-
-        const user = await User.findOne({ clerkUserId }).select("_id");
-        if (!user) return res.status(404).json("User not found");
-
-        const { commentId } = req.params;
-        try { await Like.create({ user: user._id, comment: commentId }); } catch (_) {}
-        const liked = await Like.countDocuments({ comment: commentId });
-        const isLiked = !!(await Like.exists({ user: user._id, comment: commentId }));
-        return res.status(200).json({ _id: commentId, liked, isLiked });
-    } catch (err) {
-        return res.status(500).json({ message: err.message });
+    const clerkUserId = req.auth().userId;
+    if (!clerkUserId) {
+        return res.status(401).json("Not authenticated!");
     }
+
+    const user = await User.findOne({ clerkUserId }).select("_id");
+    if (!user) {
+        return res.status(404).json("User not found");
+    }
+
+    const { commentId } = req.params;
+    await Like.create({ user: user._id, comment: commentId });
+    const liked = await Like.countDocuments({ comment: commentId });
+    const isLiked = !!(await Like.exists({ user: user._id, comment: commentId }));
+
+    return res.status(200).json({ _id: commentId, liked, isLiked });
 };
 
 export const unlikeComment = async (req, res) => {
-    try {
-        const clerkUserId = req.auth().userId;
-        if (!clerkUserId) {
-            return res.status(401).json("Not authenticated!");
-        }
-
-        const user = await User.findOne({ clerkUserId }).select("_id");
-        if (!user) return res.status(404).json("User not found");
-
-        const { commentId } = req.params;
-        await Like.deleteOne({ user: user._id, comment: commentId });
-        const liked = await Like.countDocuments({ comment: commentId });
-        const isLiked = !!(await Like.exists({ user: user._id, comment: commentId }));
-        return res.status(200).json({ _id: commentId, liked, isLiked });
-    } catch (err) {
-        return res.status(500).json({ message: err.message });
+    const clerkUserId = req.auth().userId;
+    if (!clerkUserId) {
+        return res.status(401).json("Not authenticated!");
     }
+
+    const user = await User.findOne({ clerkUserId }).select("_id");
+    if (!user) { 
+        return res.status(404).json("User not found");
+    }
+
+    const { commentId } = req.params;
+    await Like.deleteOne({ user: user._id, comment: commentId });
+    const liked = await Like.countDocuments({ comment: commentId });
+    const isLiked = !!(await Like.exists({ user: user._id, comment: commentId }));
+
+    return res.status(200).json({ _id: commentId, liked, isLiked });
 };

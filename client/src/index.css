@@ -13,14 +13,17 @@ body{
     animation-duration: 10000ms;
 }
 
-.ql-container{
-    border: none !important;
-}
-
 .ql-toolbar{
     border: none !important;
 }
 
-.ql-editor{
-    border: none !important;
+.ql-container {
+  border: none !important;
+  height: 500px !important; /* chiều cao khung editor */
+}
+
+.ql-editor {
+  border: none !important;
+  height: 450px !important; /* vùng nhập */
+  overflow-y: auto; /* cuộn khi text quá dài */
 }

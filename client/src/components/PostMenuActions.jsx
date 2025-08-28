@@ -99,7 +99,6 @@ const PostMenuActions = ({ post }) => {
     const handleFeature = () => {
         featureMutation.mutate();
     };
-
     
     // Function to handle when user saves/unsaves post
     const handleSave = () => {

@@ -1,14 +1,15 @@
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 const Search = () => {
-    const location = useLocation();
-    const navigate = useNavigate();
+    const location = useLocation(); // get information about the current URL (pathname, search, hash, ...)
+    const navigate = useNavigate(); // used to navigate to another route
     const [searchParams, setSearchParams] = useSearchParams();
 
     const handleKeyPress = (e) => {
       if (e.key === "Enter") {
-          const query = e.target.value;
+          const query = e.target.value; // Get the value in the input box
           if (location.pathname === "/posts") {
+              // Only update the query param "search" in the current URL
               setSearchParams({ ...Object.fromEntries(searchParams), search: query });
           } else {
               navigate(`/posts?search=${query}`);

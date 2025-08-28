@@ -4,13 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
 import { v4 as uuid } from "uuid";
+import { useMemo } from "react";
 
 const Comments = ({ postId }) => {
     const { user } = useUser();
     const { getToken } = useAuth();
-    // Log user image URL for debugging
-    //console.log("User image URL:", user?.imageUrl);
-    //console.log("User object:", user);
     
     //Get a list of comments for a post from the backend with auth (to compute isLiked)
     const { isPending, error, data } = useQuery({
@@ -111,34 +109,84 @@ const Comments = ({ postId }) => {
         });
     };
 
-    // Build a tree: map parentId -> children[] and list of roots (no replyId)
-    const rootComments = Array.isArray(data) ? data.filter((c) => !c.replyId) : [];
-    const childrenByParentId = Array.isArray(data) ? data.reduce((acc, c) => {
-            if (c.replyId) {
-                const parentId = typeof c.replyId === "string" ? c.replyId : c.replyId?._id || c.replyId?.toString?.();
-                if (parentId) {
-                    if (!acc[parentId]) acc[parentId] = [];
-                    acc[parentId].push(c);
-                }
-            }
-            return acc;
-        }, {})
-        : {};
+    // comments without replyId
+    // const rootComments = Array.isArray(data) ? data.filter((c) => !c.replyId) : [];    
+    // // Group children by parentId
+    // const childrenByParentId = Array.isArray(data) ? data.reduce((acc, c) => {
+    //         if (c.replyId) {
+    //             const parentId = typeof c.replyId === "string" ? c.replyId : c.replyId?._id || c.replyId?.toString?.();
+    //             if (parentId) {
+    //                 if (!acc[parentId]) acc[parentId] = [];
+    //                 acc[parentId].push(c);
+    //             }
+    //         }
+    //         return acc;
+    //     }, {})
+    //     : {};
+
+    // // Show 1 comment. If there are children → call renderCommentTree recursively to render all replies, then pl-3 to indent reply.
+    // const renderCommentTree = (comment) => (
+    //     <div key={comment._id} className="flex flex-col gap-3">
+    //         <Comment comment={comment} postId={postId} onReplyAdded={handleReplyAdded} />
+    //         {Array.isArray(childrenByParentId[comment._id]) && childrenByParentId[comment._id].length > 0 && (
+    //             <div className="flex flex-col gap-3 pl-3 md:pl-4">
+    //                 {childrenByParentId[comment._id].map((child) => renderCommentTree(child))}
+    //             </div>
+    //         )}
+    //     </div>
+    // );
 
     const handleReplyAdded = (reply) => {
-        // Insert new reply into the cached flat list for this post
         queryClient.setQueryData(["comments", postId], (old) => {
             if (!Array.isArray(old)) return old;
-            return [reply, ...old];
+            return [reply, ...old]; // insert new reply at the beginning of the list
         });
     };
+    
+    // ensure that only when data changes will rootComments + childrenByParentId be recalculated without replyId (root) + group children by parentId
+    const { rootComments, childrenByParentId } = useMemo(() => {
+        if (!Array.isArray(data)) {
+            return { rootComments: [], childrenByParentId: new Map() };
+        }
 
+        // comments without replyId
+        const roots = data
+            .filter((c) => !c.replyId)
+            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+        // Group children by parentId
+        const map = new Map();
+        data.forEach((c) => {
+            if (c.replyId) {
+                const parentId =
+                    typeof c.replyId === "string"
+                        ? c.replyId
+                        : c.replyId?._id || c.replyId?.toString?.();
+
+                if (parentId) {
+                    if (!map.has(parentId)) map.set(parentId, []); // has/get lookup faster than object
+                    map.get(parentId).push(c);
+                }
+            }
+        });
+
+        // Sort children by createdAt
+        for (const [key, list] of map.entries()) {
+            list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        }
+
+        return { rootComments: roots, childrenByParentId: map };
+    }, [data]);
+
+    // Show 1 comment. If there are children → call renderCommentTree recursively to render all replies, then pl-3 to indent reply.
     const renderCommentTree = (comment) => (
         <div key={comment._id} className="flex flex-col gap-3">
             <Comment comment={comment} postId={postId} onReplyAdded={handleReplyAdded} />
-            {Array.isArray(childrenByParentId[comment._id]) && childrenByParentId[comment._id].length > 0 && (
+            {childrenByParentId.has(comment._id) && (
                 <div className="flex flex-col gap-3 pl-3 md:pl-4">
-                    {childrenByParentId[comment._id].map((child) => renderCommentTree(child))}
+                    {childrenByParentId
+                        .get(comment._id)
+                        .map((child) => renderCommentTree(child))}
                 </div>
             )}
         </div>

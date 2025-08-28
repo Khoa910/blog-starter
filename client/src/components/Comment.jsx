@@ -33,53 +33,57 @@ const Comment = ({ comment, postId, onReplyAdded }) => {
                 }
             );
         },
-        //called after successful API response
         onSuccess: () => {
             // Remove the deleted comment from cache for this post
             queryClient.setQueryData(["comments", postId], (old) => {
                 if (!Array.isArray(old)) return old;
-                return old.filter((c) => c._id !== comment._id);
+                return old.filter((thisComment) => thisComment._id !== comment._id);
             });
             toast.success("Comment deleted successfully");
         },
-        //handle API errors
         onError: (error) => {
             toast.error(error.response.data);
         },
     });
 
-    const [replying, setReplying] = useState(false);
-    const [replyText, setReplyText] = useState("");
-    const [liked, setLiked] = useState(!!comment.isLiked);
-    const [likeCount, setLikeCount] = useState(typeof comment.liked === "number" ? comment.liked : 0);
+    const [replying, setReplying] = useState(false); // Is the reply form open or not?
+    const [replyText, setReplyText] = useState(""); // The text of comment reply
+    const [liked, setLiked] = useState(!!comment.isLiked); // State of like
+    const [likeCount, setLikeCount] = useState(typeof comment.liked === "number" ? comment.liked : 0); // Number of likes
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(comment.desc);
 
+    // Like/unlike mutation
     const likeMutation = useMutation({
         mutationFn: async ({ nextLiked }) => {
             const token = await getToken();
             const config = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
             if (nextLiked) {
                 return axios.put(
-                    `${import.meta.env.VITE_API_URL}/likes/${comment._id}/me`,
+                    `${import.meta.env.VITE_API_URL}/likes/${comment._id}`,
                     {},
                     config
                 );
             }
             return axios.delete(
-                `${import.meta.env.VITE_API_URL}/likes/${comment._id}/me`,
+                `${import.meta.env.VITE_API_URL}/likes/${comment._id}`,
                 config
             );
         },
+        // Optimistic update (update before server returns)
         onMutate: async ({ nextLiked }) => {
             const previous = { prevLiked: liked, prevCount: likeCount };
-            setLiked(nextLiked);
+            setLiked(nextLiked); //Update UI immediately
             setLikeCount((c) => Math.max(0, c + (nextLiked ? 1 : -1)));
             return previous;
         },
+        // If error -> rollback to old state
         onError: (err, _vars, context) => {
             setLiked(context?.prevLiked ?? false);
             setLikeCount(context?.prevCount ?? 0);
-            toast.error("Failed to update like");
+            toast.error("You need to login");
         },
+        // If successful -> sync with server data (if any)
         onSuccess: (res) => {
             if (typeof res?.data?.liked === "number") {
                 setLikeCount(res.data.liked);
@@ -124,9 +128,42 @@ const Comment = ({ comment, postId, onReplyAdded }) => {
         },
     });
 
+    const editMutation = useMutation({
+        mutationFn: async ({ id, desc }) => {
+            const token = await getToken();
+            return axios.patch(`${import.meta.env.VITE_API_URL}/comments/${id}`, { desc },
+            {
+                headers: { Authorization: `Bearer ${token}` },
+            }
+            );
+        },
+        onSuccess: (res) => {
+            queryClient.setQueryData(["comments", postId], (old) => {
+            if (!Array.isArray(old)) return old;
+            return old.map((c) =>
+                c._id === res.data._id ? { ...c, desc: res.data.desc } : c
+            );
+            });
+            toast.success("Comment updated!");
+        },
+        onError: () => {
+            toast.error("Failed to update comment");
+        },
+    });
+
+    const handleSave = () => {
+        editMutation.mutate({ id: comment._id, desc: editText },
+        {
+            onSuccess: () => {
+            setIsEditing(false);
+            },
+        }
+        )
+    };
+
     return(
         <div className="mb-4">
-            {/* Khung comment */}
+            {/* Comment box */}
             <div className={`p-4 bg-slate-50 rounded-xl ${comment.replyId ? "border border-slate-200" : ""}`}>
                 <div className="flex items-center gap-4">
                     {comment.user.img && (
@@ -146,7 +183,11 @@ const Comment = ({ comment, postId, onReplyAdded }) => {
                     )}
                 </div>
             <div className="mt-4">
-                <p>{comment.desc}</p>
+                {isEditing ? (
+                    <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full p-2 border rounded"/>
+                ) : (
+                    <p>{comment.desc}</p>
+                )}
             </div>
             </div>
 
@@ -158,6 +199,28 @@ const Comment = ({ comment, postId, onReplyAdded }) => {
                     {likeCount > 0 && <span className="ml-1">{likeCount}</span>}
                 </button>
                 <button onClick={() => setReplying(!replying)} className="hover:text-blue-500">Reply</button>
+                {user && (comment.user.username === user.username || role === "admin") && (
+                    isEditing ? (
+                    <>
+                        <button
+                        className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
+                        onClick={() => handleSave()}
+                        >Save</button>
+                        <button
+                        className="px-3 py-1 text-sm text-gray-600 bg-gray-200 rounded hover:bg-gray-300"
+                        onClick={() => {
+                            setIsEditing(false);
+                            setEditText(comment.desc);
+                        }}
+                        >Cancel</button>
+                    </>
+                    ) : (
+                    <button
+                        className="hover:text-blue-500"
+                        onClick={() => setIsEditing(true)}
+                    >Edit</button>
+                    )
+                )}
             </div>
 
             {/* Reply box */}

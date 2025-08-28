@@ -16,9 +16,6 @@ const SavedPostPage = () => {
                 <div className="">
                     <SavePost/>
                 </div>
-                <div className={`${open ? "block" : "hidden"} md:block`}>
-                    <Search/>
-                </div>
             </div>
         </div>
     );

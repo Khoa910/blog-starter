@@ -5,11 +5,10 @@ import Comment from "../models/comment.model.js";
 
 export const getPosts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 2;
+    const limit = parseInt(req.query.limit) || 15;
 
     //Create an empty query object → will be used to pass into MongoDB find()
     const query = {};
-    //console.log(req.query);
     const cat = req.query.cat;
     const author = req.query.author;
     const searchQuery = req.query.search;
@@ -37,7 +36,6 @@ export const getPosts = async (req, res) => {
 
     //Default sort by latest created date
     let sortObj = { createdAt: -1 };
-
     if (sortQuery) {
         switch (sortQuery) {
         case "newest":
@@ -68,10 +66,16 @@ export const getPosts = async (req, res) => {
         .sort(sortObj)
         .limit(limit)
         .skip((page - 1) * limit);
-    const totalPosts = await Post.countDocuments();
-    const hasMore = page * limit < totalPosts;
+    const totalPosts = await Post.countDocuments(query);
+    const totalPages = Math.ceil(totalPosts / limit);
 
-    res.status(200).json({ posts, hasMore });
+    res.status(200).json({
+        posts,
+        currentPage: page,
+        totalPages,
+        totalPosts,
+        hasMore: page < totalPages,
+    });
 };
 
 export const getPost = async (req, res) => { 
@@ -93,7 +97,8 @@ export const createPost = async (req, res) => {
     let slug = req.body.title.replace(/ /g, "-").toLowerCase()
     let existingPost = await Post.findOne({ slug });
 
-    let counter = 3;
+    // if the name post is same, bonus number behind the end of slug
+    let counter = 1;
     while(existingPost){
         slug = `${slug}-${counter}`;
         existingPost = await Post.findOne({ slug });
@@ -108,25 +113,76 @@ export const createPost = async (req, res) => {
 
 export const deletePost = async (req, res) => {
     const clerkUserId = req.auth().userId;
-    if(!clerkUserId){
+    if (!clerkUserId) {
         return res.status(401).json("not authenticated");
     }
 
     const role = req.auth.sessionClaims?.metadata?.role || "user";
+    let deletedPost;
+
     if (role === "admin") {
-        await Post.findByIdAndDelete(req.params.id);
-        return res.status(200).json("Post has been deleted");
+        deletedPost = await Post.findByIdAndDelete(req.params.id);
+    } else {
+        const user = await User.findOne({ clerkUserId });
+        deletedPost = await Post.findOneAndDelete({ _id: req.params.id, user: user._id });
+        if (!deletedPost) {
+        return res.status(403).json({ message: "You can delete only your posts!" });
+        }
     }
 
-    const user = await User.findOne({ clerkUserId });
-    const deletedPost = await Post.findByIdAndDelete({ _id: req.params.id, user: user._id });
     if (!deletedPost) {
-      return res.status(403).json({ message: "You can deleted only your posts!" });
+        return res.status(404).json({ message: "Post not found" });
     }
 
-    await Comment.deleteMany({post:deletedPost._id})
+    await Comment.deleteMany({ post: deletedPost._id });
+    await User.updateMany(
+        { savedPosts: deletedPost._id.toString() },
+        { $pull: { savedPosts: deletedPost._id.toString() } }
+    );
+
     res.status(200).json({ message: "Post deleted successfully" });
 };
+
+export const updatePost = async (req, res) => {
+    const clerkUserId = req.auth().userId;
+    if (!clerkUserId) return res.status(401).json("Not authenticated");
+
+    const user = await User.findOne({ clerkUserId });
+    if (!user) return res.status(404).json("User not found");
+
+    const post = await Post.findOne({ slug: req.params.slug });
+    //const post = await Post.findById(req.params.id);
+    //console.log("Found post:", post);
+    if (!post) return res.status(404).json("Post not found");
+
+    const role = req.auth.sessionClaims?.metadata?.role || "user";
+    if (role !== "admin" && !post.user.equals(user._id)) {
+        return res.status(403).json("You can edit only your posts!");
+    }
+
+    // Update slug nếu title thay đổi
+    let newSlug = post.slug;
+    if (req.body.title && req.body.title !== post.title) {
+        newSlug = req.body.title.replace(/ /g, "-").toLowerCase();
+        let existingPost = await Post.findOne({ slug: newSlug });
+        let counter = 1;
+        while (existingPost && !existingPost._id.equals(post._id)) {
+            newSlug = `${newSlug}-${counter}`;
+            existingPost = await Post.findOne({ slug: newSlug });
+            counter++;
+        }
+    }
+
+    // Update các field
+    post.title = req.body.title ?? post.title;
+    post.desc = req.body.desc ?? post.desc;
+    post.content = req.body.content ?? post.content;
+    post.slug = newSlug;
+
+    const updatedPost = await post.save();
+    res.status(200).json(updatedPost);
+};
+
 
 export const featurePost = async (req, res) => {
     const clerkUserId = req.auth().userId;

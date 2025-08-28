@@ -14,6 +14,7 @@ import SavedPostPage from './routes/SavedPostPage.jsx';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ScrollToTop from './components/ScrollToTop.jsx';
 
 const queryClient = new QueryClient();
 
@@ -63,7 +64,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <RouterProvider router={router} fallbackElement={<ScrollToTop />} />
         <ToastContainer position="bottom-right" />
       </QueryClientProvider>
     </ClerkProvider>

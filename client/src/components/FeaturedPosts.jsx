@@ -41,7 +41,7 @@ const FeaturedPosts = () => {
             {/* Others */}
             <div className="flex flex-col w-full gap-4 lg:w-1/2">
                 {/* Second */}
-                {posts[1] && <div className="flex justify-between gap-4 lg:h-1/3">
+                {posts[1] && <div className="flex justify-between gap-4 ">
                     {posts[1].img && <div className="w-1/3 aspect-video">
                         <ImageKit src={posts[1].img} className="object-cover w-full h-full rounded-3xl" w="298" />
                     </div>}
@@ -58,7 +58,7 @@ const FeaturedPosts = () => {
                     </div>
                 </div>}
                 {/* Third */}
-                {posts[2] && <div className="flex justify-between gap-4 lg:h-1/3">
+                {posts[2] && <div className="flex justify-between gap-4 ">
                         {posts[2].img && <div className="w-1/3 aspect-video">
                             <ImageKit src={posts[2].img} className="object-cover w-full h-full rounded-3xl" w="298" />
                         </div>}
@@ -75,7 +75,7 @@ const FeaturedPosts = () => {
                         </div>
                     </div>}
                 {/* Fourth */}
-                {posts[3] && <div className="flex justify-between gap-4 lg:h-1/3">
+                {posts[3] && <div className="flex justify-between gap-4 ">
                     {posts[3].img && <div className="w-1/3 aspect-video">
                         <ImageKit src={posts[3].img} className="object-cover w-full h-full rounded-3xl" w="298" />
                     </div>}

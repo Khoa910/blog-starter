@@ -15,15 +15,6 @@ app.use(clerkMiddleware()); // Middleware to handle Clerk authentication
 app.use("/webhooks", webhookRouter);
 app.use(express.json());
 
-app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept"
-    );
-    next();
-});
-
 app.get("/auth-state", (req, res) => {
     const authState = req.auth();
     res.json(authState);
@@ -52,35 +43,15 @@ app.use((error, req, res, next) => {
   });
 });
 
-// app.get("/crawl", async (req, res) => {
-//   try {
-//     await runCrawler(); // chạy crawler
-//     res.send("Crawler finished!");
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Crawler error!");
-//   }
-// });
-
-app.get("/crawl", async (req, res) => {
-  try {
-    const posts = await runCrawler(); // chạy crawler
-    console.log(posts); // in ra terminal localhost
-
-    res.json(posts); // trả về JSON cho client cũng được
-  } catch (err) {
-    console.error("Crawler error:", err.message);
-    res.status(500).send("Crawler error!");
-  }
-});
-
 app.listen(3000, () => {
     connectDB(); // Connect to MongoDB before starting the server
-  console.log('Server is running on port 3000');
+    console.log('Server is running on port 3000');
+    setInterval(async () => {
+      try {
+        console.log("🔄 Đang crawl lại...");
+        await runCrawler();
+      } catch (err) {
+        console.error("Crawler error:", err.message);
+      }
+    }, 12 * 60 * 60 * 1000); // 12h = 43200000 ms
 });
-
-
-
-// Export crawler modules để có thể sử dụng từ bên ngoài
-// export { crawlVibloPosts, runCrawler } from './crawler/index.js';
-// export * from './crawler/crawler-config.js';
