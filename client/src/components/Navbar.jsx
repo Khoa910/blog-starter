@@ -28,9 +28,9 @@ const Navbar = () => {
           <Image src="icons8-menu-94.png" alt="menu" w={32} h={32} />}
         </div>
         {/*Mobile Link List*/}
-        <div className={`w-full h-screen bg-[#e6e6ff] flex flex-col items-center justify-center gap-8 font-medium text-lg absolute top-16 transition-all ease-in-out z-50 ${open ? "-right-0" : "-left-[100%]"}`}>
+        <div className={`bg-[#e6e6ff] p-4 rounded-2xl shadow-lg flex flex-col items-center justify-center gap-8 font-medium text-lg absolute top-16 transition-all ease-in-out z-50 ${open ? "-right-0" : "-left-[100%]"}`}>
           <Link to="/" onClick={() => setOpen(false)} className="px-4 py-2 transition bg-transparent rounded-3xl hover:bg-blue-800 hover:text-white">Home</Link>
-          <Link to="/posts" onClick={() => setOpen(false)} className="px-4 py-2 transition bg-transparent rounded-3xl hover:bg-blue-800 hover:text-white">Search</Link>
+          <Link to="/posts" onClick={() => setOpen(false)} className="px-4 py-2 transition bg-transparent rounded-3xl hover:bg-blue-800 hover:text-white">Blogs</Link>
           <Link to="/write" onClick={() => setOpen(false)} className="px-4 py-2 transition bg-transparent rounded-3xl hover:bg-blue-800 hover:text-white">Write</Link>
           <Link to="/savedpost" onClick={() => setOpen(false)} className="px-4 py-2 transition bg-transparent rounded-3xl hover:bg-blue-800 hover:text-white">Saved Posts</Link>
           <SignedOut>
@@ -46,7 +46,7 @@ const Navbar = () => {
       {/*Desktop Menu*/}
       <div className="items-center hidden gap-8 font-medium md:flex xl:gap-12">
         <Link to="/">Home</Link>
-        <Link to="/posts">Search</Link>
+        <Link to="/posts">Blogs</Link>
         <Link to="/write">Write</Link>
         <Link to="/savedpost">Saved Posts</Link>
         <SignedOut>
