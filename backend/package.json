@@ -5,9 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "crawl": "node crawler/crawler.js",
-    "start-crawler": "node crawler/crawler-scheduler.js",
-    "demo": "node crawler-demo.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
